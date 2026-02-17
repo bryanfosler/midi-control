@@ -35,6 +35,41 @@
 
 ---
 
+## Session 2 — GitHub, Notion & Time Tracking Infrastructure
+
+**Date:** 02.17.2026
+**Time spent:** ~35m
+
+### What We Built
+- GitHub repo (`bryanfosler/midi-control`) with initial commit + .gitignore
+- GitHub Project board for MIDI Control
+- GitHub Actions → Notion sync workflow with Project tagging
+- Time tracking via issue comments (`Time: 45m` → syncs to Notion "Time Spent (min)" column)
+- Updated route-generator workflow to match (Project tag + time tracking + inline database ID)
+- 8 GitHub issues (6 backlog + 2 completed)
+- Time logging instructions doc
+- Master `CLAUDE.md` updated with session & time tracking requirements
+
+### What Shipped
+- Repo: https://github.com/bryanfosler/midi-control
+- GitHub Project: https://github.com/users/bryanfosler/projects/2
+- Both projects syncing to shared Notion database with Project tags and time tracking
+
+### Bugs Fixed
+- Notion API key was empty on first deploy — re-set secret
+- GitHub Actions secret masking corrupted database ID — inlined UUID in workflow
+- Workflow lacked `issues: read` permission for fetching comments — added permissions block
+- "Time Spent (min)" property didn't exist in Notion — created manually
+
+### Decisions Made
+- Separate GitHub Projects per repo (not one shared board)
+- Time tracked as numeric minutes in Notion for easy summing across projects
+- Comment-based time logging (`Time: Xm`) over labels or manual entry
+- Database ID inlined in workflow (not sensitive, avoids masking bug)
+- Session & time tracking instructions added to master CLAUDE.md for all future sessions
+
+---
+
 ## Backlog / Ideas
 
 *Things mentioned but not built yet:*
