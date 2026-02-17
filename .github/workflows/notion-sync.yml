@@ -12,14 +12,13 @@ jobs:
         uses: actions/github-script@v7
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         with:
           script: |
             const issue = context.payload.issue;
             const action = context.payload.action;
 
             const notionKey = process.env.NOTION_API_KEY;
-            const dbId = process.env.NOTION_DATABASE_ID;
+            const dbId = '30a95da6-c9dc-805a-8dcc-cf1dc2694ea2';
 
             // Map GitHub issue state to Notion status
             const statusMap = {
