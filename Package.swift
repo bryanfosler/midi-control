@@ -7,9 +7,13 @@ let package = Package(
     platforms: [
         .macOS(.v14)
     ],
+    dependencies: [
+        .package(path: "/Users/bryan/utils/swift")
+    ],
     targets: [
         .executableTarget(
             name: "MIDIControl",
+            dependencies: [.product(name: "ProgressTracker", package: "swift")],
             path: "Sources/MIDIControl"
         )
     ]
