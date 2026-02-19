@@ -31,6 +31,12 @@ swift run          # run (GUI requires Xcode for full SwiftUI support)
 open Package.swift # open in Xcode for GUI development
 ```
 
+## Shared Utilities
+ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
+- SPM identifies local packages by **folder name**, not `Package.swift` name
+- Reference: `.product(name: "ProgressTracker", package: "swift")`
+- Use for terminal/CLI progress output; in-app progress uses SwiftUI `ProgressView`
+
 ## Key Files
 - `Models/Pedals/BrothersAMDefinition.swift` — Brothers AM CC table
 - `Models/Pedals/MoodMKIIDefinition.swift` — MOOD MKII CC table
