@@ -162,6 +162,38 @@
 
 ---
 
+## Session 6 — Global Utils Setup + ProgressTracker (Python/JS/Swift)
+
+**Date:** 02.19.2026
+**Time spent:** ~35m
+
+### What We Built
+- `~/utils/` shared utilities folder — available to all projects on the machine
+- `progress_tracker.py` — terminal progress bar with elapsed time and ETA for Python scripts
+- `progress-tracker.js` — same for Node.js (terminal) and browser (renders HTML progress bar)
+- `ProgressTracker.swift` — same for Swift, packaged as a local SPM library
+- `~/utils/CLAUDE.md` — documents all utilities so Claude Code always knows they exist
+- Shell config (`~/.zshrc`) updated with `PYTHONPATH`, `NODE_PATH`, and `~/.npm-global` PATH
+- npm prefix moved to `~/.npm-global` (was system-owned `/usr/local`, blocked npm link)
+- `~/utils` initialized as a git repo and pushed to https://github.com/bryanfosler/utils (private)
+- ProgressTracker added to MIDIControl as a local SPM dependency (`Package.swift`)
+
+### What Shipped
+- All three imports verified working in a fresh shell
+- `swift build` clean after adding SPM dependency
+- GitHub: https://github.com/bryanfosler/utils
+
+### Bugs Fixed
+- `npm link` permission denied on `/usr/local` — fixed by setting npm prefix to `~/.npm-global`
+- SPM product reference — SPM identifies local packages by folder name ("swift"), not Package.swift `name` field; fixed with `.product(name: "ProgressTracker", package: "swift")`
+
+### Decisions Made
+- Utils live at `~/utils/` (flat, language-separated: python/, js/, swift/)
+- npm prefix at `~/.npm-global` going forward (avoids sudo for all future global npm installs)
+- ProgressTracker is terminal-only in MIDIControl context — in-app progress uses SwiftUI's native `ProgressView`
+
+---
+
 ## Backlog / Ideas
 
 *Things mentioned but not built yet:*
