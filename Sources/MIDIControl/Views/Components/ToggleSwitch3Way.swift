@@ -108,10 +108,12 @@ struct ToggleSwitch3Way: View {
                     )
 
                 // ── Tap targets (one transparent rect per slot) ──
+                // Note: Color.clear does not receive hit-testing on macOS —
+                // use opacity(0.001) so the view is invisible but clickable.
                 HStack(spacing: 0) {
                     ForEach(0..<options.count, id: \.self) { i in
-                        Color.clear
-                            .frame(width: slotWidth, height: trackHeight + 14) // extra tap area
+                        Color.white.opacity(0.001)
+                            .frame(width: slotWidth, height: trackHeight + 14)
                             .contentShape(Rectangle())
                             .onTapGesture { select(index: i) }
                     }

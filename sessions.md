@@ -105,6 +105,63 @@
 
 ---
 
+## Session 4 — Wrap-Up Skill Setup
+
+**Date:** 02.18.2026
+**Time spent:** ~20m
+
+### What We Built
+- Installed the `/wrap-up` skill from a Reddit post into `~/.claude/skills/wrap-up/SKILL.md`
+- Fully customized it for Bryan's workspace: hardcoded repo paths, sessions.md format, bryanlearns.md update step, GitHub time tracking workflow, xcodegen reminder for MIDI Control, and Drafts folder for publish drafts
+- Synced to legacy `~/Documents/Claude/Commands/wrap-up.md`
+- Created `~/Documents/Claude/Drafts/` folder
+- Added Skills section to global `CLAUDE.md` (restart required to activate new skills)
+
+### What Shipped
+- `/wrap-up` skill ready to use — activate by restarting Claude Code
+
+### Decisions Made
+- Skills live in `~/.claude/skills/`, not `~/Documents/Claude/Commands/` (legacy)
+- Commands folder kept in sync as a backup reference
+
+---
+
+## Session 5 — Lifelike UI, Correct Dip Switches, 12 Brothers AM Presets
+
+**Date:** 02.19.2026
+**Time spent:** ~1h 30m
+
+### What We Built
+- `RotaryKnob.swift` — redesigned with 3D dome rendering (bevel ring, grip ticks, radial gradient dome, specular highlight); smoother drag/scroll (5px/unit drag, scroll accumulator for trackpad); Shift for fine control
+- `ToggleSwitch3Way.swift` — rewrote as horizontal metal bat switch (labels above, chrome bat slides left/center/right, spring animation); fixed broken tap interaction (macOS `Color.clear` doesn't hit-test — replaced with `Color.white.opacity(0.001)`)
+- `DipSwitchBank.swift` — 3D housing with shadow, slide tab, LED dot, `pedalId` wired through
+- `BypassButton` / `MomentaryButton` — rubber ring, radial gradient dome, lens LED, `pedalId` wired through
+- `ParameterDescriptions.swift` (new) — hover tooltips for every parameter on both pedals, sourced from PDF manuals; lookup priority: pedal+id → pedal+cc → global
+- `BrothersAMDefinition.swift` — fully corrected dip switch definitions (both banks, all 16 switches) per official MIDI manual
+- `PedalLayout.swift` — Brothers AM dip banks updated to correct IDs (`dip_vol1`–`dip_polarity`, `dip_hi_gain_1`–`dip_bank`) and labels ("Control (Exp & Ramp)" / "Customize")
+- `FactoryPresets.swift` (new) — 12 Brothers AM presets seeded on first launch (bumped seed key to v2 for re-seed)
+  - Factory: The Analog Man, Sunny Skies, 2-In-1, Bad Bros
+  - Two-Channel Ideas: Clean/Dirty, Amp Pusher
+  - Stacking Ideas: Overloader, Expander, Combo
+  - Treble Booster Settings: Cutting Cleans, Full Stack, Lifted Distortion
+
+### What Shipped
+- All 12 presets verified seeded and named correctly at runtime
+- `swift build` clean (Build complete 3.50s)
+- Commit: `394ce18`
+
+### Bugs Fixed
+- **Toggle switches not clicking** — macOS `Color.clear` is transparent to hit-testing; replaced with `Color.white.opacity(0.001)` which is invisible but receives mouse events
+- **Brothers AM dip switches completely wrong** — original code had wrong names and functions for both banks; replaced with correct IDs/names per MIDI manual
+- **Tooltip warnings on dip switches** — CC-based fallback keys replaced with proper ID-based keys now that labels are correct; removed all ⚠️ warnings
+
+### Decisions Made
+- Factory preset seeding uses UserDefaults key versioning (`v1` → `v2`) so existing users automatically get new presets on next launch
+- Tooltips use three-level lookup (pedal+id → pedal+cc → global) as a safety net for future parameter additions
+- `Color.white.opacity(0.001)` is the standard macOS SwiftUI workaround for invisible hit-testable tap areas
+
+---
+
 ## Backlog / Ideas
 
 *Things mentioned but not built yet:*
