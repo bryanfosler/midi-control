@@ -47,25 +47,26 @@ extension PedalDefinition {
                 id: "gain2type", name: "Gain 2 Type", cc: 21,
                 type: .toggle(options: [
                     ToggleOption(name: "Boost", value: 0),
-                    ToggleOption(name: "Drive", value: 64),
-                    ToggleOption(name: "Fuzz", value: 127),
+                    ToggleOption(name: "OD", value: 2),
+                    ToggleOption(name: "Dist", value: 3),
                 ]),
                 section: "Toggles"
             ),
             ParameterDefinition(
                 id: "trebleboost", name: "Treble Boost", cc: 22,
                 type: .toggle(options: [
-                    ToggleOption(name: "Off", value: 0),
-                    ToggleOption(name: "On", value: 127),
+                    ToggleOption(name: "Full Sun", value: 0),
+                    ToggleOption(name: "Off", value: 2),
+                    ToggleOption(name: "Half Sun", value: 3),
                 ]),
                 section: "Toggles"
             ),
             ParameterDefinition(
                 id: "gain1type", name: "Gain 1 Type", cc: 23,
                 type: .toggle(options: [
-                    ToggleOption(name: "Boost", value: 0),
-                    ToggleOption(name: "Drive", value: 64),
-                    ToggleOption(name: "Fuzz", value: 127),
+                    ToggleOption(name: "Dist", value: 0),
+                    ToggleOption(name: "OD", value: 2),
+                    ToggleOption(name: "Boost", value: 3),
                 ]),
                 section: "Toggles"
             ),
@@ -86,67 +87,67 @@ extension PedalDefinition {
                 type: .knob, section: "Expression"
             ),
 
-            // MARK: - Dip Switches Left Bank (CC 61-68)
+            // MARK: - Dip Switches Left Bank (CC 61-68) — Channel 1 settings
             ParameterDefinition(
-                id: "dip_l1", name: "Dip L1", cc: 61,
+                id: "dip_l1", name: "Hi Gain 1", cc: 61,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l2", name: "Dip L2", cc: 62,
+                id: "dip_l2", name: "Tone Scoop 1", cc: 62,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l3", name: "Dip L3", cc: 63,
+                id: "dip_l3", name: "Bright 1", cc: 63,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l4", name: "Dip L4", cc: 64,
+                id: "dip_l4", name: "Comp 1", cc: 64,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l5", name: "Dip L5", cc: 65,
+                id: "dip_l5", name: "Hi Gain 2", cc: 65,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l6", name: "Dip L6", cc: 66,
+                id: "dip_l6", name: "Tone Scoop 2", cc: 66,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l7", name: "Dip L7", cc: 67,
+                id: "dip_l7", name: "Bright 2", cc: 67,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l8", name: "Dip L8", cc: 68,
+                id: "dip_l8", name: "Comp 2", cc: 68,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
 
-            // MARK: - Dip Switches Right Bank (CC 71-77)
+            // MARK: - Dip Switches Right Bank (CC 71-77) — Global settings
             ParameterDefinition(
-                id: "dip_r1", name: "Dip R1", cc: 71,
+                id: "dip_r1", name: "Order", cc: 71,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r2", name: "Dip R2", cc: 72,
+                id: "dip_r2", name: "Parallel", cc: 72,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r3", name: "Dip R3", cc: 73,
+                id: "dip_r3", name: "Master", cc: 73,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r4", name: "Dip R4", cc: 74,
+                id: "dip_r4", name: "Bypass", cc: 74,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r5", name: "Dip R5", cc: 75,
+                id: "dip_r5", name: "Last MIDI", cc: 75,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r6", name: "Dip R6", cc: 76,
+                id: "dip_r6", name: "Exp Assign", cc: 76,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r7", name: "Dip R7", cc: 77,
+                id: "dip_r7", name: "Preset", cc: 77,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
 

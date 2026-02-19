@@ -64,7 +64,61 @@ The `AppViewModel` is injected at the top of the view hierarchy and available to
 ### Binding
 `Binding<Int>` is a two-way connection between a view and its data source. When a slider moves, it writes through the binding; when the ViewModel changes the value, the slider updates.
 
+---
+
+## Session 3 Lessons: Xcode, SwiftUI Layout, and AppKit Interop
+
+### Swift Package ≠ macOS App — A Subtle Trap
+
+When you build with `swift run`, Swift Package Manager runs your executable directly. That's great for CLI tools, but macOS apps need a proper **app bundle** — a folder structure ending in `.app` that contains your binary, an `Info.plist`, icons, and more. Without that bundle:
+
+- There's no `CFBundleIdentifier`, so macOS can't index the window
+- The app window sometimes never appears
+- You get cryptic errors like "Cannot index window tabs due to missing main bundle identifier"
+
+The fix: generate a real `MIDIControl.xcodeproj` using **xcodegen**, a tool that reads a `project.yml` file and outputs a valid Xcode project. You just install it once with Homebrew (`brew install xcodegen`) and run `xcodegen generate` any time you add new files.
+
+**The takeaway:** For any real macOS app, you want an `.xcodeproj`, not just a `Package.swift`. xcodegen lets you describe your project in simple YAML and regenerate the `.xcodeproj` automatically — no more hand-editing that terrifying `project.pbxproj` file.
+
+### SwiftUI Layout: ZStack + VStack for Realistic Controls
+
+The pedal enclosure is a `ZStack` — the background shell rendered first, then the content `VStack` drawn on top. That's the same pattern used everywhere in SwiftUI when you want a shaped background with content inside it.
+
+Inside the `VStack`, content is ordered top-to-bottom to match the physical pedal:
+```
+Knob rows → Toggle row → Brand section → Footswitches
+```
+
+A key trick for evenly distributing 3 knobs across a fixed width is wrapping them in `HStack` with `Spacer(minLength: 0)` between and around them. SwiftUI's `Spacer` is greedy — it expands to fill available space — so alternating knobs and spacers creates equal gaps automatically.
+
+### NSViewRepresentable: Reaching Into AppKit When SwiftUI Falls Short
+
+SwiftUI doesn't support scroll wheel events natively on macOS (as of early 2026). But `NSView` — the older AppKit view class — does. `NSViewRepresentable` is SwiftUI's bridge to AppKit: you wrap an `NSView` subclass so SwiftUI can use it like any other view.
+
+For the scroll wheel:
+1. Subclass `NSView`, override `scrollWheel(with:)` — this is called automatically whenever the mouse wheel or trackpad scrolls over the view
+2. Wrap it in a `NSViewRepresentable` struct
+3. Place it as the bottom layer of the knob's `ZStack` — it catches events even though you can't see it
+
+```
+ZStack {
+    ScrollWheelHandler { delta in ... }  ← invisible, catches scroll
+    [visual layers on top]
+}
+```
+
+**The aha moment:** AppKit has decades of mature event handling that SwiftUI hasn't fully caught up to yet. Knowing how to drop down to `NSView` when needed is a critical macOS skill — it's not a hack, it's the intended architecture.
+
+### ForEach Needs Truly Unique IDs
+
+SwiftUI's `ForEach` requires a unique identifier for each item so it can track which views to update when data changes. When we used `\.x` (the x coordinate) as the ID for corner screw positions, two corners shared the same x value (the left side inset), causing a warning.
+
+The fix is simple: use `array.indices` (the position numbers 0, 1, 2, 3) as IDs when the data items aren't naturally unique. Index positions are always unique within an array.
+
+---
+
 ## What's Next (Future Phases)
+- Visual polish and hardware testing
 - iOS companion app (the architecture is already portable)
 - User-defined pedal definitions (JSON import)
 - MIDI learn mode

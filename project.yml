@@ -1,0 +1,34 @@
+name: MIDIControl
+
+options:
+  bundleIdPrefix: com.bryanfosler
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+targets:
+  MIDIControl:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/MIDIControl
+        excludes:
+          - "**/*.plist"
+    info:
+      path: Sources/MIDIControl/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bryanfosler.MIDIControl
+        SWIFT_VERSION: "5.0"
+        INFOPLIST_FILE: Sources/MIDIControl/Info.plist
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        CODE_SIGN_STYLE: Automatic
+        LD_RUNPATH_SEARCH_PATHS: ["$(inherited)", "@executable_path/../Frameworks"]
+    dependencies:
+      - sdk: CoreMIDI.framework

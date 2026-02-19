@@ -59,6 +59,11 @@ struct PedalDefinition: Identifiable, Equatable {
         return order.map { (name: $0, parameters: groups[$0]!) }
     }
 
+    /// Look up a parameter by its string ID
+    func parameter(byId id: String) -> ParameterDefinition? {
+        parameters.first { $0.id == id }
+    }
+
     static func == (lhs: PedalDefinition, rhs: PedalDefinition) -> Bool {
         lhs.id == rhs.id
     }

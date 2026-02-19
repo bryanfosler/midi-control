@@ -1,33 +1,20 @@
 import SwiftUI
 
-/// Main window layout — toolbar with MIDI selector + tab bar for pedals
+/// Main window layout — side-by-side pedal columns with shared MIDI toolbar
 struct ContentView: View {
     @EnvironmentObject var appViewModel: AppViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Pedal tabs
-            if let selectedPedal = appViewModel.selectedPedal {
-                PedalView(viewModel: selectedPedal)
-            } else {
-                Text("No pedal selected")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        HStack(spacing: 1) {
+            ForEach(appViewModel.pedalViewModels) { vm in
+                let layout = PedalLayout.layout(for: vm.definition.id)
+                let theme = PedalColorTheme.theme(for: vm.definition.id)
+                PedalColumn(viewModel: vm, layout: layout, theme: theme)
             }
         }
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 MIDIDeviceSelector(midiManager: appViewModel.midiManager)
-            }
-
-            ToolbarItem(placement: .principal) {
-                Picker("Pedal", selection: $appViewModel.selectedPedalIndex) {
-                    ForEach(Array(appViewModel.pedalViewModels.enumerated()), id: \.element.id) { index, vm in
-                        Text(vm.definition.name).tag(index)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 300)
             }
 
             ToolbarItem(placement: .primaryAction) {

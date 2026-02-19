@@ -70,6 +70,41 @@
 
 ---
 
+## Session 3 — Xcode Migration + Realistic Pedal UI Redesign
+
+**Date:** 02.18.2026
+**Time spent:** ~1h 30m
+
+### What We Built
+- Migrated from Swift Package to proper `MIDIControl.xcodeproj` via xcodegen + `project.yml` (fixes blank window / missing bundle ID)
+- Complete visual redesign of both pedal enclosures based on reference photos of real Chase Bliss pedals:
+  - Fixed both pedals to identical 280×500pt size
+  - Correct colors: MOOD MK2 = deep violet + white outer border; Brothers AM = deep purple/plum (was wrongly cream/gold)
+  - Accurate 3+3 knob layout for both pedals; toggles now render below knobs (matching real hardware)
+  - `MoodBrand` — horizontal amber/yellow color bands + large italic "MOOD MKii" text
+  - `BrothersBrand` — gold sunburst "AM" badge + large serif "Brothers" text on dark background
+  - Corner screws, gradient enclosure shell, thin separator rules
+- `DipSwitchPanel.swift` — new collapsible panel above the pedal (represents physical side panel)
+- Scroll wheel support on all rotary knobs (`NSViewRepresentable` overlay captures `scrollWheel` events)
+- Fixed ForEach duplicate ID bug in ScrewCorners
+
+### What Shipped
+- App builds and runs as a proper macOS app bundle — no more blank window
+- Both pedals visually close to the Chase Bliss Presets app reference
+- All knob interactions: drag up/down, scroll wheel, Shift for fine control, Option+click to reset
+
+### Bugs Fixed
+- **Blank window / missing bundle identifier** — Swift Package doesn't create app bundle; fixed by generating `.xcodeproj` with xcodegen
+- **ForEach duplicate ID** in `ScrewCorners` — corner points share same x value; fixed to use `pts.indices`
+- **Brothers AM wrong colors** — was cream/gold from original code; corrected to deep purple/plum from reference photos
+
+### Decisions Made
+- xcodegen + `project.yml` as the build system going forward (not Swift Package)
+- Dip switches live in a separate collapsible panel above the pedal (not on the enclosure face)
+- Scroll wheel sensitivity: 2 CC/tick normal, 0.5 CC/tick with Shift held
+
+---
+
 ## Backlog / Ideas
 
 *Things mentioned but not built yet:*

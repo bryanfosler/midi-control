@@ -213,75 +213,79 @@ extension PedalDefinition {
 
             // MARK: - Expression
             ParameterDefinition(
+                id: "mod_wheel", name: "Mod Wheel", cc: 1,
+                type: .knob, section: "Expression"
+            ),
+            ParameterDefinition(
                 id: "expression", name: "Expression", cc: 100,
                 type: .knob, section: "Expression"
             ),
 
-            // MARK: - Dip Switches Left Bank (CC 61-68)
+            // MARK: - Dip Switches Left Bank (CC 61-68) — Wet channel
             ParameterDefinition(
-                id: "dip_l1", name: "Dip L1", cc: 61,
+                id: "dip_l1", name: "Time", cc: 61,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l2", name: "Dip L2", cc: 62,
+                id: "dip_l2", name: "Mix", cc: 62,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l3", name: "Dip L3", cc: 63,
+                id: "dip_l3", name: "Length", cc: 63,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l4", name: "Dip L4", cc: 64,
+                id: "dip_l4", name: "Mod Wet", cc: 64,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l5", name: "Dip L5", cc: 65,
+                id: "dip_l5", name: "Clock", cc: 65,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l6", name: "Dip L6", cc: 66,
+                id: "dip_l6", name: "Mod Loop", cc: 66,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l7", name: "Dip L7", cc: 67,
+                id: "dip_l7", name: "Bounce", cc: 67,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l8", name: "Dip L8", cc: 68,
+                id: "dip_l8", name: "Ramp", cc: 68,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
 
-            // MARK: - Dip Switches Right Bank (CC 71-78)
+            // MARK: - Dip Switches Right Bank (CC 71-78) — Loop channel
             ParameterDefinition(
-                id: "dip_r1", name: "Dip R1", cc: 71,
+                id: "dip_r1", name: "Time", cc: 71,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r2", name: "Dip R2", cc: 72,
+                id: "dip_r2", name: "Mix", cc: 72,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r3", name: "Dip R3", cc: 73,
+                id: "dip_r3", name: "Length", cc: 73,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r4", name: "Dip R4", cc: 74,
+                id: "dip_r4", name: "Mod Wet", cc: 74,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r5", name: "Dip R5", cc: 75,
+                id: "dip_r5", name: "Clock", cc: 75,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r6", name: "Dip R6", cc: 76,
+                id: "dip_r6", name: "Mod Loop", cc: 76,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r7", name: "Dip R7", cc: 77,
+                id: "dip_r7", name: "Bounce", cc: 77,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
             ParameterDefinition(
-                id: "dip_r8", name: "Dip R8", cc: 78,
+                id: "dip_r8", name: "Ramp", cc: 78,
                 type: .dipSwitch, section: "Dip Switches - Right"
             ),
 

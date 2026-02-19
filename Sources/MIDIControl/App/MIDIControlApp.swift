@@ -4,13 +4,17 @@ import SwiftUI
 struct MIDIControlApp: App {
     @StateObject private var appViewModel = AppViewModel()
 
+    init() {
+        NSWindow.allowsAutomaticWindowTabbing = false
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appViewModel)
-                .frame(minWidth: 800, minHeight: 600)
+                .frame(minWidth: 1100, minHeight: 700)
         }
         .windowStyle(.titleBar)
-        .defaultSize(width: 1000, height: 700)
+        .defaultSize(width: 1400, height: 850)
     }
 }
