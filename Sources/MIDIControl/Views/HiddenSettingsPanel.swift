@@ -36,6 +36,11 @@ struct HiddenSettingsPanel: View {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                             ForEach(section.parameters) { param in
                                 hiddenParamControl(param)
+                                    .help(ParameterDescriptions.description(
+                                        for: param.id,
+                                        cc: param.cc,
+                                        pedalId: viewModel.definition.id
+                                    ))
                             }
                         }
                     }
@@ -95,13 +100,17 @@ struct HiddenSettingsPanel: View {
                         set: { newValue in
                             viewModel.setValue(newValue ? 127 : 0, for: param)
                         }
-                    )
+                    ),
+                    parameter: param,
+                    pedalId: viewModel.definition.id
                 )
             }
         case .footswitch:
-            MomentaryButton(parameter: param) {
-                viewModel.triggerFootswitch(param)
-            }
+            MomentaryButton(
+                parameter: param,
+                onPress: { viewModel.triggerFootswitch(param) },
+                pedalId: viewModel.definition.id
+            )
         }
     }
 

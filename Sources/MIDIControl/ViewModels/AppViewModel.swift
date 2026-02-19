@@ -15,6 +15,10 @@ class AppViewModel: ObservableObject {
 
         self.midiManager = midi
         self.presetStorage = storage
+
+        // Seed factory presets before ViewModels load their lists
+        FactoryPresets.seedIfNeeded(storage: storage)
+
         self.pedalViewModels = [
             PedalViewModel(definition: .moodMKII, midiManager: midi, presetStorage: storage),
             PedalViewModel(definition: .brothersAM, midiManager: midi, presetStorage: storage),

@@ -71,7 +71,8 @@ struct DipSwitchPanel: View {
                         parameters: params,
                         values: $viewModel.state.values,
                         onChange: { param, value in viewModel.setValue(value, for: param) },
-                        theme: theme
+                        theme: theme,
+                        pedalId: viewModel.definition.id
                     )
                 }
             }

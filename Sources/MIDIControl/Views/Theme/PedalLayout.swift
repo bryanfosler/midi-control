@@ -48,8 +48,8 @@ struct PedalLayout {
             ["tone2", "volume1", "tone1"],  // bottom row: Tone2 | Vol1 | Tone1
         ],
         dipBanks: [
-            (label: "Left (Channels)", paramIds: ["dip_l1", "dip_l2", "dip_l3", "dip_l4", "dip_l5", "dip_l6", "dip_l7", "dip_l8"]),
-            (label: "Right (Global)", paramIds: ["dip_r1", "dip_r2", "dip_r3", "dip_r4", "dip_r5", "dip_r6", "dip_r7"]),
+            (label: "Control (Exp & Ramp)", paramIds: ["dip_vol1", "dip_vol2", "dip_gain1", "dip_gain2", "dip_tone1", "dip_tone2", "dip_sweep", "dip_polarity"]),
+            (label: "Customize", paramIds: ["dip_hi_gain_1", "dip_hi_gain_2", "dip_motobyp_1", "dip_motobyp_2", "dip_pres_link_1", "dip_pres_link_2", "dip_master", "dip_bank"]),
         ],
         footswitches: ["ch1bypass", "ch2bypass"]
     )

@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// A row of on/off dip switches with semantic labels and theme colors
+/// A row of on/off dip switches with semantic labels, theme colors, and tooltips
 struct DipSwitchBank: View {
     let parameters: [ParameterDefinition]
     let values: Binding<[Int: Int]>
     let onChange: (ParameterDefinition, Int) -> Void
     var theme: PedalColorTheme? = nil
+    var pedalId: String = ""
 
     var body: some View {
         HStack(spacing: 6) {
@@ -20,52 +21,120 @@ struct DipSwitchBank: View {
                             onChange(param, ccValue)
                         }
                     ),
-                    theme: theme
+                    theme: theme,
+                    parameter: param,
+                    pedalId: pedalId
                 )
             }
         }
     }
 }
 
-/// A single visual dip switch with optional theme colors
+/// A single visual dip switch with 3D housing, sliding tab, and tooltip
 struct DipSwitch: View {
     let label: String
     @Binding var isOn: Bool
     var theme: PedalColorTheme? = nil
+    var parameter: ParameterDefinition? = nil
+    var pedalId: String = ""
 
-    private var onColor: Color {
-        theme?.dipOnColor ?? Color.accentColor
-    }
-
-    private var offColor: Color {
-        theme?.dipOffColor ?? Color.gray.opacity(0.3)
-    }
-
-    private var labelColor: Color {
-        theme?.labelColor ?? Color.secondary
-    }
+    private var onColor: Color  { theme?.dipOnColor  ?? Color.accentColor }
+    private var labelColor: Color { theme?.labelColor ?? Color.secondary }
 
     var body: some View {
         VStack(spacing: 2) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(isOn ? onColor : offColor)
-                .frame(width: 22, height: 32)
-                .overlay(alignment: isOn ? .top : .bottom) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white)
-                        .frame(width: 16, height: 14)
-                        .padding(2)
-                }
-                .onTapGesture {
-                    isOn.toggle()
-                }
-                .animation(.easeInOut(duration: 0.1), value: isOn)
-            Text(label)
-                .font(.system(size: 8))
-                .foregroundStyle(labelColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(width: 32)
+            switchBody
+            if !label.isEmpty {
+                Text(label)
+                    .font(.system(size: 8))
+                    .foregroundStyle(labelColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: 34)
+            }
         }
+        .help(
+            parameter.map {
+                ParameterDescriptions.description(for: $0.id, cc: $0.cc, pedalId: pedalId)
+            } ?? ""
+        )
+    }
+
+    private var switchBody: some View {
+        ZStack {
+            // Housing shadow
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.black.opacity(0.50))
+                .frame(width: 22, height: 34)
+                .blur(radius: 2)
+                .offset(y: 2)
+
+            // Housing body
+            RoundedRectangle(cornerRadius: 4)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(white: 0.30), Color(white: 0.22)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 22, height: 34)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color(white: 0.46), Color(white: 0.16)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.75
+                        )
+                )
+
+            // Inner track channel
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.black.opacity(0.60))
+                .frame(width: 15, height: 27)
+
+            // Slide tab
+            ZStack {
+                // Tab shadow
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(Color.black.opacity(0.35))
+                    .frame(width: 13, height: 12)
+                    .blur(radius: 1)
+                    .offset(y: 0.5)
+
+                // Tab body
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(white: 0.94), Color(white: 0.74)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 13, height: 12)
+
+                // Tab top highlight
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(Color.white.opacity(0.55))
+                    .frame(width: 7, height: 2)
+                    .offset(y: -3.5)
+            }
+            .offset(y: isOn ? -7.5 : 7.5)
+            .animation(.easeInOut(duration: 0.12), value: isOn)
+
+            // ON indicator LED at top of housing
+            Circle()
+                .fill(isOn ? onColor : Color(white: 0.22))
+                .frame(width: 4, height: 4)
+                .offset(y: -13.5)
+                .shadow(color: isOn ? onColor.opacity(0.7) : .clear, radius: 2)
+                .animation(.easeInOut(duration: 0.12), value: isOn)
+        }
+        .frame(width: 22, height: 34)
+        .contentShape(Rectangle())
+        .onTapGesture { isOn.toggle() }
     }
 }

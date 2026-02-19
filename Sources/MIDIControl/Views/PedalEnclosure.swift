@@ -65,7 +65,8 @@ struct PedalEnclosure: View {
                                 parameter: param,
                                 value: bindingForParam(param),
                                 onChange: { val in viewModel.setValue(val, for: param) },
-                                theme: theme
+                                theme: theme,
+                                pedalId: viewModel.definition.id
                             )
                             Spacer(minLength: 0)
                         }
@@ -88,7 +89,8 @@ struct PedalEnclosure: View {
                         options: options,
                         value: bindingForParam(param),
                         onChange: { val in viewModel.setValue(val, for: param) },
-                        theme: theme
+                        theme: theme,
+                        pedalId: viewModel.definition.id
                     )
                     Spacer()
                 }
@@ -125,7 +127,8 @@ struct PedalEnclosure: View {
                             set: { bypassStates[param.cc] = $0 }
                         ),
                         onTap: { viewModel.triggerFootswitch(param) },
-                        theme: theme
+                        theme: theme,
+                        pedalId: viewModel.definition.id
                     )
                     Spacer()
                 }
