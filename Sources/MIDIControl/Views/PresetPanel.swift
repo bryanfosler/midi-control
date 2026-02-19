@@ -1,112 +1,131 @@
 import SwiftUI
 
-/// Sidebar panel for preset management — list, save, load, delete, rename
+/// Compact sidebar panel for preset management.
+/// - Single click to load a preset and highlight it.
+/// - Preset notes hidden from the list; shown on hover as a tooltip.
+/// - Reset button (↺) in header returns all params to factory defaults.
 struct PresetPanel: View {
     @ObservedObject var viewModel: PedalViewModel
 
     @State private var showingSaveSheet = false
-    @State private var newPresetName = ""
-    @State private var newPresetNotes = ""
+    @State private var newPresetName    = ""
+    @State private var newPresetNotes   = ""
     @State private var renamingPreset: Preset?
-    @State private var renameText = ""
+    @State private var renameText       = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack {
+
+            // ── Header ──────────────────────────────────────────────
+            HStack(spacing: 4) {
                 Text("Presets")
-                    .font(.headline)
+                    .font(.system(size: 12, weight: .semibold))
                 Spacer()
-                Button(action: { showingSaveSheet = true }) {
-                    Image(systemName: "plus")
+
+                // Reset to factory defaults
+                Button {
+                    viewModel.resetToDefaults()
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 11))
                 }
-                .help("Save current settings as preset")
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Reset all parameters to factory defaults")
+
+                // Save current settings as new preset
+                Button {
+                    showingSaveSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 11))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Save current settings as a preset")
                 .keyboardShortcut("s", modifiers: .command)
             }
-            .padding()
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
 
             Divider()
 
-            // Preset list
+            // ── Preset List ─────────────────────────────────────────
             if viewModel.presets.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Spacer()
-                    Text("No presets saved")
-                        .foregroundStyle(.secondary)
-                    Text("Click + to save current settings")
-                        .font(.caption)
+                    Image(systemName: "tray")
+                        .font(.system(size: 18))
                         .foregroundStyle(.tertiary)
+                    Text("No presets")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     Spacer()
                 }
                 .frame(maxWidth: .infinity)
             } else {
-                List {
-                    ForEach(viewModel.presets) { preset in
-                        PresetRow(
-                            preset: preset,
-                            onLoad: { viewModel.loadPreset(preset) },
-                            onDelete: { viewModel.deletePreset(preset) },
-                            onRename: {
-                                renamingPreset = preset
-                                renameText = preset.name
-                            }
-                        )
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(viewModel.presets) { preset in
+                            PresetRow(
+                                preset: preset,
+                                isActive: viewModel.activePresetId == preset.id,
+                                onLoad:   { viewModel.loadPreset(preset) },
+                                onDelete: { viewModel.deletePreset(preset) },
+                                onRename: {
+                                    renamingPreset = preset
+                                    renameText = preset.name
+                                }
+                            )
+                        }
                     }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
                 }
-                .listStyle(.sidebar)
             }
 
-            // Dirty state indicator
+            // ── Unsaved-changes indicator ────────────────────────────
             if viewModel.state.isDirty {
                 Divider()
-                HStack {
+                HStack(spacing: 4) {
                     Circle()
                         .fill(Color.orange)
-                        .frame(width: 6, height: 6)
+                        .frame(width: 5, height: 5)
                     Text("Unsaved changes")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
             }
         }
-        .sheet(isPresented: $showingSaveSheet) {
-            savePresetSheet
-        }
-        .sheet(item: $renamingPreset) { preset in
-            renameSheet(preset)
-        }
+        .sheet(isPresented: $showingSaveSheet) { savePresetSheet }
+        .sheet(item: $renamingPreset)          { renameSheet($0)  }
     }
 
     // MARK: - Save Sheet
 
     private var savePresetSheet: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Text("Save Preset")
                 .font(.headline)
-
             TextField("Preset Name", text: $newPresetName)
                 .textFieldStyle(.roundedBorder)
-
             TextField("Notes (optional)", text: $newPresetNotes)
                 .textFieldStyle(.roundedBorder)
-
             HStack {
                 Button("Cancel") {
                     showingSaveSheet = false
-                    newPresetName = ""
+                    newPresetName  = ""
                     newPresetNotes = ""
                 }
                 .keyboardShortcut(.cancelAction)
-
                 Spacer()
-
                 Button("Save") {
                     guard !newPresetName.isEmpty else { return }
                     viewModel.savePreset(name: newPresetName, notes: newPresetNotes)
                     showingSaveSheet = false
-                    newPresetName = ""
+                    newPresetName  = ""
                     newPresetNotes = ""
                 }
                 .keyboardShortcut(.defaultAction)
@@ -114,27 +133,21 @@ struct PresetPanel: View {
             }
         }
         .padding()
-        .frame(width: 300)
+        .frame(width: 280)
     }
 
     // MARK: - Rename Sheet
 
     private func renameSheet(_ preset: Preset) -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Text("Rename Preset")
                 .font(.headline)
-
             TextField("Name", text: $renameText)
                 .textFieldStyle(.roundedBorder)
-
             HStack {
-                Button("Cancel") {
-                    renamingPreset = nil
-                }
-                .keyboardShortcut(.cancelAction)
-
+                Button("Cancel") { renamingPreset = nil }
+                    .keyboardShortcut(.cancelAction)
                 Spacer()
-
                 Button("Rename") {
                     guard !renameText.isEmpty else { return }
                     viewModel.renamePreset(preset, to: renameText)
@@ -145,39 +158,48 @@ struct PresetPanel: View {
             }
         }
         .padding()
-        .frame(width: 300)
+        .frame(width: 280)
     }
 }
 
 // MARK: - Preset Row
 
 private struct PresetRow: View {
-    let preset: Preset
-    let onLoad: () -> Void
+    let preset:   Preset
+    let isActive: Bool
+    let onLoad:   () -> Void
     let onDelete: () -> Void
     let onRename: () -> Void
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(preset.name)
-                    .font(.body)
-                if !preset.notes.isEmpty {
-                    Text(preset.notes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+        Text(preset.name)
+            .font(.system(size: 11))
+            .multilineTextAlignment(.leading)
+            .lineLimit(3)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 5)
+            .padding(.horizontal, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isActive ? Color.accentColor.opacity(0.18) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .strokeBorder(
+                        isActive ? Color.accentColor.opacity(0.45) : Color.clear,
+                        lineWidth: 1
+                    )
+            )
+            .contentShape(Rectangle())
+            // Single click to load and highlight
+            .onTapGesture { onLoad() }
+            // Notes shown on hover only — keeps list compact
+            .help(preset.notes.isEmpty ? preset.name : "\(preset.name)\n\n\(preset.notes)")
+            .contextMenu {
+                Button("Load")        { onLoad()   }
+                Button("Rename…")     { onRename() }
+                Divider()
+                Button("Delete", role: .destructive) { onDelete() }
             }
-            Spacer()
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(count: 2) { onLoad() }
-        .contextMenu {
-            Button("Load") { onLoad() }
-            Button("Rename...") { onRename() }
-            Divider()
-            Button("Delete", role: .destructive) { onDelete() }
-        }
     }
 }

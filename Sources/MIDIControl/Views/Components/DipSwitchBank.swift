@@ -46,34 +46,34 @@ struct DipSwitch: View {
             switchBody
             if !label.isEmpty {
                 Text(label)
-                    .font(.system(size: 8))
+                    .font(.system(size: 9, weight: .medium))
                     .foregroundStyle(labelColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .frame(width: 34)
+                    .shadow(color: .black.opacity(0.55), radius: 1, x: 0, y: 0.5)
             }
         }
-        .help(
-            parameter.map {
-                ParameterDescriptions.description(for: $0.id, cc: $0.cc, pedalId: pedalId)
-            } ?? ""
-        )
     }
+
+    // Pedal-tinted housing color: blend the theme background toward dark for contrast
+    private var housingTop:    Color { (theme?.backgroundGradient[0] ?? Color(white: 0.22)).opacity(0.90) }
+    private var housingBottom: Color { (theme?.backgroundGradient[1] ?? Color(white: 0.16)).opacity(0.95) }
 
     private var switchBody: some View {
         ZStack {
             // Housing shadow
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.black.opacity(0.50))
+                .fill(Color.black.opacity(0.55))
                 .frame(width: 22, height: 34)
                 .blur(radius: 2)
                 .offset(y: 2)
 
-            // Housing body
+            // Housing body — tinted with the pedal's theme color
             RoundedRectangle(cornerRadius: 4)
                 .fill(
                     LinearGradient(
-                        colors: [Color(white: 0.30), Color(white: 0.22)],
+                        colors: [housingTop, housingBottom],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -83,7 +83,7 @@ struct DipSwitch: View {
                     RoundedRectangle(cornerRadius: 4)
                         .strokeBorder(
                             LinearGradient(
-                                colors: [Color(white: 0.46), Color(white: 0.16)],
+                                colors: [Color(white: 0.52), Color(white: 0.20)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -136,5 +136,11 @@ struct DipSwitch: View {
         .frame(width: 22, height: 34)
         .contentShape(Rectangle())
         .onTapGesture { isOn.toggle() }
+        // .help() on the interactive view so macOS tooltip fires on the right NSView layer
+        .help(
+            parameter.map {
+                ParameterDescriptions.description(for: $0.id, cc: $0.cc, pedalId: pedalId)
+            } ?? ""
+        )
     }
 }

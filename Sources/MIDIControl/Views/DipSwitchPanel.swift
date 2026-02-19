@@ -85,10 +85,18 @@ struct DipSwitchPanel: View {
 
     private var panelBackground: some View {
         RoundedRectangle(cornerRadius: 12)
-            .fill(theme.backgroundGradient[0].opacity(0.22))
+            .fill(
+                LinearGradient(
+                    colors: [
+                        theme.backgroundGradient[0].opacity(0.50),
+                        theme.backgroundGradient[1].opacity(0.65),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(theme.labelColor.opacity(0.18), lineWidth: 1)
+                    .strokeBorder(theme.labelColor.opacity(0.28), lineWidth: 1)
             )
     }
 }

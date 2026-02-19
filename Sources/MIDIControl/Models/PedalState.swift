@@ -43,6 +43,16 @@ class PedalState: ObservableObject {
         isDirty = false
     }
 
+    /// Reset all parameters to their factory default values
+    func resetToDefaults() {
+        var defaults: [Int: Int] = [:]
+        for param in definition.parameters {
+            defaults[param.cc] = param.defaultValue
+        }
+        values = defaults
+        isDirty = false
+    }
+
     /// Reset dirty flag (after saving)
     func markClean() {
         isDirty = false

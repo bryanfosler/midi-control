@@ -2,7 +2,13 @@ import SwiftUI
 
 /// A horizontal bat-style toggle switch matching real metal guitar pedal toggles.
 /// Options are arranged left-to-right; the bat lever slides between positions.
-/// Labels appear above each slot. Per-slot Buttons ensure reliable click interaction.
+/// Labels appear above each slot.
+///
+/// Interaction: DragGesture(minimumDistance: 0) on the outer VStack.
+/// - onEnded fires for any mouse-down + mouse-up (click or tiny drag).
+/// - startLocation.x in .local space maps directly to slot index via x / slotWidth.
+/// - .frame(width: trackWidth) constrains the VStack so the local coordinate
+///   space is exactly 0 … trackWidth, making the slot calculation reliable.
 struct ToggleSwitch3Way: View {
     let parameter: ParameterDefinition
     let options: [ToggleOption]
@@ -11,22 +17,26 @@ struct ToggleSwitch3Way: View {
     let theme: PedalColorTheme
     var pedalId: String = ""
 
-    private var selectedIndex: Int {
+    // liveIndex drives the bat position immediately on click via @State re-render.
+    // Without this, PedalState (a class) mutations don't propagate to viewModel's
+    // objectWillChange, so the parent view doesn't re-render and the bat stays frozen.
+    @State private var liveIndex: Int = 0
+
+    private func indexFromValue(_ val: Int) -> Int {
         var bestIndex = 0
         var bestDist = Int.max
         for i in 0..<options.count {
-            let dist = abs(options[i].value - value)
+            let dist = abs(options[i].value - val)
             if dist < bestDist { bestDist = dist; bestIndex = i }
         }
         return bestIndex
     }
 
     private func select(index: Int) {
+        liveIndex = index                    // immediate visual update via @State
         let newValue = options[index].value
-        if newValue != value {
-            value = newValue
-            onChange(newValue)
-        }
+        value = newValue
+        onChange(newValue)
     }
 
     var body: some View {
@@ -35,9 +45,9 @@ struct ToggleSwitch3Way: View {
             HStack(spacing: 0) {
                 ForEach(0..<options.count, id: \.self) { i in
                     Text(options[i].name)
-                        .font(.system(size: 8, weight: selectedIndex == i ? .bold : .regular))
+                        .font(.system(size: 8, weight: liveIndex == i ? .bold : .regular))
                         .foregroundStyle(
-                            selectedIndex == i
+                            liveIndex == i
                                 ? theme.labelColor
                                 : theme.labelColor.opacity(0.40)
                         )
@@ -48,7 +58,7 @@ struct ToggleSwitch3Way: View {
             }
             .frame(width: trackWidth)
 
-            // ── Switch housing (visual only — no gesture here) ──
+            // ── Switch housing (visual only) ──
             ZStack {
                 // Housing outer shadow
                 RoundedRectangle(cornerRadius: 5)
@@ -97,27 +107,10 @@ struct ToggleSwitch3Way: View {
                     .offset(x: batOffset)
                     .animation(
                         .interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
-                        value: selectedIndex
+                        value: liveIndex
                     )
             }
             .frame(width: trackWidth, height: trackHeight)
-            // Tap targets overlaid on the housing.
-            // Using Button (not onTapGesture) for reliable macOS click handling.
-            // Height extends above/below the housing for a generous tap area.
-            // The overlay is NOT clipped to the ZStack frame, so the full
-            // tapHeight is available even though the housing is only trackHeight.
-            .overlay(
-                HStack(spacing: 0) {
-                    ForEach(0..<options.count, id: \.self) { i in
-                        Button { select(index: i) } label: {
-                            Color.white.opacity(0.001)
-                                .frame(width: slotWidth, height: tapHeight)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            )
 
             // ── Parameter name ──
             Text(parameter.name)
@@ -127,6 +120,25 @@ struct ToggleSwitch3Way: View {
                 .minimumScaleFactor(0.6)
                 .frame(width: trackWidth)
         }
+        // Constrain width so .local coordinate space is exactly 0…trackWidth
+        .frame(width: trackWidth)
+        .contentShape(Rectangle())
+        // DragGesture(minimumDistance:0) fires on any mouse-down + mouse-up.
+        // onEnded gives startLocation in .local space → reliable slot calculation.
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                .onEnded { gesture in
+                    // Ignore if the user actually dragged (not a tap)
+                    guard abs(gesture.translation.width)  < 10,
+                          abs(gesture.translation.height) < 10 else { return }
+                    let idx = min(options.count - 1,
+                                  max(0, Int(gesture.startLocation.x / slotWidth)))
+                    select(index: idx)
+                }
+        )
+        // Sync liveIndex from binding when value changes externally (e.g. preset load)
+        .onAppear { liveIndex = indexFromValue(value) }
+        .onChange(of: value) { liveIndex = indexFromValue(value) }
         .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 
@@ -172,13 +184,12 @@ struct ToggleSwitch3Way: View {
     private var slotWidth:   CGFloat { 26 }
     private var trackWidth:  CGFloat { slotWidth * CGFloat(options.count) }
     private var trackHeight: CGFloat { 18 }
-    private var tapHeight:   CGFloat { 32 }   // generous tap area = trackHeight + 14
     private var batWidth:    CGFloat { slotWidth - 5 }
     private var batHeight:   CGFloat { trackHeight - 3 }
 
     private var batOffset: CGFloat {
         let trackCenter = trackWidth / 2
-        let slotCenter  = slotWidth * (CGFloat(selectedIndex) + 0.5)
+        let slotCenter  = slotWidth * (CGFloat(liveIndex) + 0.5)
         return slotCenter - trackCenter
     }
 }

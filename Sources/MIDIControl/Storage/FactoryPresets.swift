@@ -10,14 +10,38 @@ enum FactoryPresets {
 
     /// Seed factory presets for all pedals if they haven't been created yet.
     /// Uses UserDefaults to avoid re-seeding on every launch.
+    /// v4: adds dedup cleanup before saving so repeated version bumps don't stack duplicates.
     static func seedIfNeeded(storage: PresetStorage) {
-        let key = "factoryPresetsSeeded_v3"
+        let key = "factoryPresetsSeeded_v4"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
 
-        for preset in brothersAMPresets { storage.save(preset) }
-        for preset in moodMKIIPresets  { storage.save(preset) }
+        // Remove any duplicates (by name) accumulated from previous seed versions
+        cleanupDuplicates(storage: storage)
+
+        // Save each preset only if a preset with that name doesn't already exist
+        for preset in brothersAMPresets + moodMKIIPresets {
+            let existing = storage.loadPresets(for: preset.pedalId)
+            if !existing.contains(where: { $0.name == preset.name }) {
+                storage.save(preset)
+            }
+        }
 
         UserDefaults.standard.set(true, forKey: key)
+    }
+
+    /// Removes duplicate presets (keeping the first occurrence by name) for all pedals.
+    private static func cleanupDuplicates(storage: PresetStorage) {
+        for pedalId in ["brothers-am", "mood-mkii"] {
+            let presets = storage.loadPresets(for: pedalId)
+            var seen: Set<String> = []
+            for preset in presets {
+                if seen.contains(preset.name) {
+                    storage.delete(preset)
+                } else {
+                    seen.insert(preset.name)
+                }
+            }
+        }
     }
 
     // MARK: - Brothers AM Factory Presets

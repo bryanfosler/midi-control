@@ -3,7 +3,7 @@ import AppKit
 
 /// A circular rotary knob with 270-degree sweep for CC 0–127 parameters.
 ///
-/// Interactions (all handled in AppKit for reliable macOS event routing):
+/// Interactions:
 ///   • Click + drag UP      → increase value (clockwise)
 ///   • Click + drag DOWN    → decrease value (counter-clockwise)
 ///   • Shift + drag         → fine control (14px per unit)
@@ -21,10 +21,24 @@ struct RotaryKnob: View {
     private let minAngle: Double = -135
     private let maxAngle: Double =  135
 
+    // liveValue drives the visual during a drag for immediate response.
+    // When not dragging, we show the bound `value`.
+    @State private var liveValue: Int = 0
+    @State private var isDragging: Bool = false
+    @State private var dragStartValue: Int = 0
+    @State private var dragStartY: CGFloat = 0
     @State private var scrollAccumulator: Double = 0
 
+    // Delta-based drag with velocity acceleration:
+    // lastDragY tracks the previous frame's position for per-frame delta calculation.
+    // fractionalAccumulator preserves sub-unit motion so slow drags stay smooth.
+    @State private var lastDragY: CGFloat = 0
+    @State private var fractionalAccumulator: Double = 0
+
+    private var displayValue: Int { isDragging ? liveValue : value }
+
     private var rotation: Double {
-        let fraction = Double(value) / 127.0
+        let fraction = Double(displayValue) / 127.0
         return minAngle + fraction * (maxAngle - minAngle)
     }
 
@@ -38,7 +52,6 @@ struct RotaryKnob: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(width: 68)
-        .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 
     // MARK: - Knob Visual
@@ -109,139 +122,134 @@ struct RotaryKnob: View {
                 .rotationEffect(.degrees(rotation))
         }
         .frame(width: 58, height: 58)
-        // KnobInteraction is a transparent NSView overlay that handles ALL
-        // mouse events directly in AppKit — reliable, real-time, no SwiftUI
-        // gesture/event routing issues.
-        .overlay(
-            KnobInteraction(
-                currentValue: value,
-                defaultValue: parameter.defaultValue,
-                tooltip: ParameterDescriptions.description(
-                    for: parameter.id, cc: parameter.cc, pedalId: pedalId
-                ),
-                onChange: { newValue in
-                    value = newValue
-                    onChange(newValue)
-                },
-                onScroll: { delta in
-                    let sensitivity = NSEvent.modifierFlags.contains(.shift) ? 0.15 : 1.0
-                    scrollAccumulator += delta * sensitivity
-                    let change = Int(scrollAccumulator)
-                    if change != 0 {
-                        scrollAccumulator -= Double(change)
-                        let newValue = max(0, min(127, value + change))
+        // Scroll wheel captured via NSView background (doesn't block SwiftUI gestures)
+        .background(
+            ScrollWheelCapture { delta in
+                let sensitivity = NSEvent.modifierFlags.contains(.shift) ? 0.15 : 1.0
+                scrollAccumulator += delta * sensitivity
+                let change = Int(scrollAccumulator)
+                if change != 0 {
+                    scrollAccumulator -= Double(change)
+                    let newValue = max(0, min(127, value + change))
+                    if newValue != value {
+                        value = newValue
+                        onChange(newValue)
+                    }
+                }
+            }
+        )
+        // DragGesture handles drag (knob turning) AND click (tap with no movement)
+        .gesture(
+            // .local coordinate space: startLocation.x is 0…58 within the knob,
+            // so > 29 reliably identifies the right half for the click action.
+            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                .onChanged { gesture in
+                    if !isDragging {
+                        dragStartValue = value
+                        dragStartY = gesture.startLocation.y
+                        lastDragY = gesture.startLocation.y
+                        fractionalAccumulator = Double(value)
+                        liveValue = value
+                        isDragging = true
+                    }
+
+                    // Per-frame delta (positive = dragged upward = increase value)
+                    let dy = lastDragY - gesture.location.y
+                    lastDragY = gesture.location.y
+
+                    // Velocity-based sensitivity:
+                    //   Slow drag  (~0 pts/s)   → 0.20 units/px  (= 5px per unit, original feel)
+                    //   Fast drag  (500+ pts/s) → 1.00 units/px  (= 5× faster)
+                    // Shift held: fixed fine sensitivity, no acceleration.
+                    let isFine = NSEvent.modifierFlags.contains(.shift)
+                    let sensitivity: Double
+                    if isFine {
+                        sensitivity = 1.0 / 14.0
+                    } else {
+                        let speed = abs(gesture.velocity.height)       // pts/sec
+                        let accel = min(1.0, speed / 500.0)            // 0 → 1 over 0–500 pts/s
+                        sensitivity = 0.20 + accel * 0.80              // 0.20 → 1.00 units/px
+                    }
+
+                    fractionalAccumulator += Double(dy) * sensitivity
+                    fractionalAccumulator = max(0, min(127, fractionalAccumulator))
+
+                    let newValue = Int(fractionalAccumulator.rounded())
+                    if newValue != liveValue {
+                        liveValue = newValue
+                        value = newValue
+                        onChange(newValue)
+                    }
+                }
+                .onEnded { gesture in
+                    defer {
+                        isDragging = false
+                        liveValue = value
+                    }
+
+                    // Distinguish click (tiny movement) from drag
+                    guard abs(gesture.translation.height) < 3 else { return }
+
+                    if NSEvent.modifierFlags.contains(.option) {
+                        value = parameter.defaultValue
+                        onChange(parameter.defaultValue)
+                    } else {
+                        // Snap to the nearest 10% grid point (0%, 10%, 20%…100% of 127).
+                        // Right half → next higher snap point; left half → next lower.
+                        // Snap points: [0, 13, 25, 38, 51, 64, 76, 89, 102, 114, 127]
+                        let snapPoints = (0...10).map { Int((Double($0) / 10.0 * 127.0).rounded()) }
+                        let clickedRight = gesture.startLocation.x > 29
+                        let newValue: Int
+                        if clickedRight {
+                            newValue = snapPoints.first(where: { $0 > value }) ?? 127
+                        } else {
+                            newValue = snapPoints.last(where:  { $0 < value }) ?? 0
+                        }
                         if newValue != value {
                             value = newValue
                             onChange(newValue)
                         }
                     }
                 }
-            )
         )
+        // .help() is placed here (on the interactive ZStack) so macOS tooltip
+        // detection fires on the same NSView layer that receives mouse events.
+        .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 }
 
-// MARK: - AppKit Interaction Layer
+// MARK: - Scroll Wheel Capture
 
-/// Transparent NSView that sits over the knob visuals and owns all mouse/scroll events.
-private struct KnobInteraction: NSViewRepresentable {
-    let currentValue: Int
-    let defaultValue: Int
-    let tooltip: String
-    let onChange: (Int) -> Void
+/// A transparent NSView that captures scroll wheel events and forwards delta to a closure.
+/// Used as .background() so it sits below SwiftUI gestures without blocking them.
+private struct ScrollWheelCapture: NSViewRepresentable {
     let onScroll: (Double) -> Void
 
-    func makeNSView(context: Context) -> KnobInteractionView {
-        KnobInteractionView()
+    func makeNSView(context: Context) -> ScrollCaptureView {
+        let v = ScrollCaptureView()
+        v.onScroll = onScroll
+        return v
     }
 
-    func updateNSView(_ nsView: KnobInteractionView, context: Context) {
-        nsView.currentValue  = currentValue
-        nsView.defaultValue  = defaultValue
-        nsView.onChange      = onChange
-        nsView.onScroll      = onScroll
-        nsView.toolTip       = tooltip.isEmpty ? nil : tooltip
+    func updateNSView(_ nsView: ScrollCaptureView, context: Context) {
+        nsView.onScroll = onScroll
     }
 }
 
-private class KnobInteractionView: NSView {
-
-    // Set by updateNSView on every SwiftUI render
-    var currentValue: Int = 0
-    var defaultValue: Int = 0
-    var onChange: ((Int) -> Void)?
+private class ScrollCaptureView: NSView {
     var onScroll: ((Double) -> Void)?
 
-    private var dragStartValue: Int  = 0
-    private var dragStartY: CGFloat  = 0
-    private var isDragging: Bool     = false
+    override var acceptsFirstResponder: Bool { false }
 
-    // Knob is 58×58 in SwiftUI points; normal drag = 5pt/unit
-    private let pxPerUnit:     Double = 5.0
-    private let finePxPerUnit: Double = 14.0
-
-    override var acceptsFirstResponder: Bool { true }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-
-    // MARK: - Mouse Events
-
-    override func mouseDown(with event: NSEvent) {
-        window?.makeFirstResponder(self)
-        dragStartValue = currentValue
-        dragStartY     = event.locationInWindow.y
-        isDragging     = false
-    }
-
-    override func mouseDragged(with event: NSEvent) {
-        let deltaFromStart = event.locationInWindow.y - dragStartY
-
-        // Engage drag mode after a 2pt threshold to avoid accidental nudges
-        if !isDragging {
-            guard abs(deltaFromStart) >= 2 else { return }
-            isDragging = true
-        }
-
-        // In AppKit, y increases upward → drag up = positive delta = increase (CW)
-        let px = event.modifierFlags.contains(.shift) ? finePxPerUnit : pxPerUnit
-        let newValue = max(0, min(127, Int(Double(dragStartValue) + deltaFromStart / px)))
-        if newValue != currentValue {
-            currentValue = newValue
-            onChange?(newValue)
-        }
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        defer { isDragging = false }
-        guard !isDragging else { return }
-
-        // Single click — no drag occurred
-        if event.modifierFlags.contains(.option) {
-            // Option+click: reset to default
-            currentValue = defaultValue
-            onChange?(defaultValue)
-        } else {
-            // Left half = −10%,  Right half = +10%
-            let locInView = convert(event.locationInWindow, from: nil)
-            let step = 13   // 127 × 0.10 ≈ 12.7 → 13 units
-            let newValue: Int
-            if locInView.x > bounds.midX {
-                newValue = min(127, currentValue + step)
-            } else {
-                newValue = max(0, currentValue - step)
-            }
-            currentValue = newValue
-            onChange?(newValue)
-        }
-    }
-
-    // MARK: - Scroll Wheel
+    // hitTest returning nil means this view is invisible to mouse clicks —
+    // SwiftUI's gesture recognizers above us get all mouse events.
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     override func scrollWheel(with event: NSEvent) {
         let delta = Double(event.deltaY)
         if abs(delta) > 0.001 {
             onScroll?(delta)
         } else {
-            // Pass unhandled scroll to the next responder (e.g. ScrollView)
             super.scrollWheel(with: event)
         }
     }
