@@ -1,16 +1,16 @@
 import SwiftUI
 import AppKit
 
-/// A circular draggable knob with 270-degree sweep for CC 0–127 parameters.
+/// A circular rotary knob with 270-degree sweep for CC 0–127 parameters.
 ///
-/// Interactions:
-///   • Click + drag up   → increase value (clockwise)
-///   • Click + drag down → decrease value (counter-clockwise)
-///   • Shift + drag      → fine control (14px per unit)
-///   • Click right half  → +10% (≈ 13 units)
-///   • Click left half   → −10%
-///   • Option + click    → reset to default
-///   • Scroll up/down    → adjust value; Shift for fine scroll
+/// Interactions (all handled in AppKit for reliable macOS event routing):
+///   • Click + drag UP      → increase value (clockwise)
+///   • Click + drag DOWN    → decrease value (counter-clockwise)
+///   • Shift + drag         → fine control (14px per unit)
+///   • Single click, right half → +10% (~13 units, clockwise)
+///   • Single click, left half  → −10% (counter-clockwise)
+///   • Option + click       → reset to default value
+///   • Scroll up / down     → ±1 unit; Shift for fine (0.15×)
 struct RotaryKnob: View {
     let parameter: ParameterDefinition
     @Binding var value: Int
@@ -21,13 +21,6 @@ struct RotaryKnob: View {
     private let minAngle: Double = -135
     private let maxAngle: Double =  135
 
-    /// Normal drag: 5px per CC unit (full range = 635px)
-    private let pxPerUnit: Double = 5.0
-    /// Shift-drag: 14px per unit for fine adjustments
-    private let finePxPerUnit: Double = 14.0
-
-    @State private var isDragging = false
-    @State private var dragStartValue: Int = 0
     @State private var scrollAccumulator: Double = 0
 
     private var rotation: Double {
@@ -48,7 +41,7 @@ struct RotaryKnob: View {
         .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 
-    // MARK: - Knob Visual + Gestures
+    // MARK: - Knob Visual
 
     @ViewBuilder
     private var knobBody: some View {
@@ -88,7 +81,7 @@ struct RotaryKnob: View {
                     .rotationEffect(.degrees(angle))
             }
 
-            // ── Main knob body (3D dome via radial gradient) ──
+            // ── Main knob body (3D dome) ──
             Circle()
                 .fill(RadialGradient(
                     colors: [
@@ -116,14 +109,20 @@ struct RotaryKnob: View {
                 .rotationEffect(.degrees(rotation))
         }
         .frame(width: 58, height: 58)
-        // Scroll wheel capture is a background NSView with hitTest→nil so it never
-        // blocks SwiftUI gestures or tooltip tracking. Scroll is intercepted via
-        // addLocalMonitorForEvents before AppKit dispatches to any view.
-        .background(
-            ScrollWheelCapture(
+        // KnobInteraction is a transparent NSView overlay that handles ALL
+        // mouse events directly in AppKit — reliable, real-time, no SwiftUI
+        // gesture/event routing issues.
+        .overlay(
+            KnobInteraction(
+                currentValue: value,
+                defaultValue: parameter.defaultValue,
                 tooltip: ParameterDescriptions.description(
                     for: parameter.id, cc: parameter.cc, pedalId: pedalId
                 ),
+                onChange: { newValue in
+                    value = newValue
+                    onChange(newValue)
+                },
                 onScroll: { delta in
                     let sensitivity = NSEvent.modifierFlags.contains(.shift) ? 0.15 : 1.0
                     scrollAccumulator += delta * sensitivity
@@ -139,104 +138,112 @@ struct RotaryKnob: View {
                 }
             )
         )
-        // Combined drag + click gesture.
-        // minimumDistance: 0 fires onChanged immediately, so we guard against
-        // tiny movements before engaging drag mode. onEnded with tiny total
-        // movement = click; uses startLocation.x to pick left vs right half.
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { gesture in
-                    let moved = abs(gesture.translation.height) > 2
-                                 || abs(gesture.translation.width) > 2
-                    guard moved else { return }
-
-                    if !isDragging {
-                        isDragging = true
-                        dragStartValue = value
-                    }
-                    let sensitivity = NSEvent.modifierFlags.contains(.shift)
-                        ? finePxPerUnit : pxPerUnit
-                    let delta = -gesture.translation.height / sensitivity
-                    let newValue = max(0, min(127, Int(Double(dragStartValue) + delta)))
-                    if newValue != value {
-                        value = newValue
-                        onChange(newValue)
-                    }
-                }
-                .onEnded { gesture in
-                    if isDragging {
-                        isDragging = false
-                        return
-                    }
-                    // Tap (no significant drag)
-                    if NSEvent.modifierFlags.contains(.option) {
-                        value = parameter.defaultValue
-                        onChange(parameter.defaultValue)
-                    } else {
-                        // Right half = +10%, Left half = −10%  (knob is 58pt wide)
-                        let step = 13  // 127 × 0.10 ≈ 12.7 → 13
-                        if gesture.startLocation.x > 29 {
-                            let newValue = min(127, value + step)
-                            value = newValue; onChange(newValue)
-                        } else {
-                            let newValue = max(0, value - step)
-                            value = newValue; onChange(newValue)
-                        }
-                    }
-                }
-        )
     }
 }
 
-// MARK: - Scroll Wheel Capture (NSViewRepresentable)
+// MARK: - AppKit Interaction Layer
 
-private struct ScrollWheelCapture: NSViewRepresentable {
+/// Transparent NSView that sits over the knob visuals and owns all mouse/scroll events.
+private struct KnobInteraction: NSViewRepresentable {
+    let currentValue: Int
+    let defaultValue: Int
     let tooltip: String
+    let onChange: (Int) -> Void
     let onScroll: (Double) -> Void
 
-    func makeNSView(context: Context) -> ScrollCaptureView {
-        ScrollCaptureView()
+    func makeNSView(context: Context) -> KnobInteractionView {
+        KnobInteractionView()
     }
 
-    func updateNSView(_ nsView: ScrollCaptureView, context: Context) {
-        nsView.onScroll = onScroll
-        nsView.toolTip = tooltip.isEmpty ? nil : tooltip
+    func updateNSView(_ nsView: KnobInteractionView, context: Context) {
+        nsView.currentValue  = currentValue
+        nsView.defaultValue  = defaultValue
+        nsView.onChange      = onChange
+        nsView.onScroll      = onScroll
+        nsView.toolTip       = tooltip.isEmpty ? nil : tooltip
     }
 }
 
-private class ScrollCaptureView: NSView {
+private class KnobInteractionView: NSView {
+
+    // Set by updateNSView on every SwiftUI render
+    var currentValue: Int = 0
+    var defaultValue: Int = 0
+    var onChange: ((Int) -> Void)?
     var onScroll: ((Double) -> Void)?
-    private var scrollMonitor: Any?
 
-    override var acceptsFirstResponder: Bool { false }
+    private var dragStartValue: Int  = 0
+    private var dragStartY: CGFloat  = 0
+    private var isDragging: Bool     = false
 
-    /// Returning nil makes this view completely transparent to AppKit hit testing.
-    /// SwiftUI gesture recognizers and tooltip tracking areas work unobstructed.
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    // Knob is 58×58 in SwiftUI points; normal drag = 5pt/unit
+    private let pxPerUnit:     Double = 5.0
+    private let finePxPerUnit: Double = 14.0
 
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if window != nil {
-            // Capture scroll events at the window level before AppKit dispatches them.
-            // Only consume the event when the cursor is within our bounds.
-            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
-                guard let self, self.window != nil else { return event }
-                let locInView = self.convert(event.locationInWindow, from: nil)
-                guard self.bounds.contains(locInView) else { return event }
-                let delta = Double(event.deltaY)
-                if abs(delta) > 0.001 {
-                    DispatchQueue.main.async { self.onScroll?(delta) }
-                    return nil  // consume — prevents the ScrollView from scrolling
-                }
-                return event
-            }
-        } else {
-            if let m = scrollMonitor { NSEvent.removeMonitor(m); scrollMonitor = nil }
+    override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    // MARK: - Mouse Events
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        dragStartValue = currentValue
+        dragStartY     = event.locationInWindow.y
+        isDragging     = false
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        let deltaFromStart = event.locationInWindow.y - dragStartY
+
+        // Engage drag mode after a 2pt threshold to avoid accidental nudges
+        if !isDragging {
+            guard abs(deltaFromStart) >= 2 else { return }
+            isDragging = true
+        }
+
+        // In AppKit, y increases upward → drag up = positive delta = increase (CW)
+        let px = event.modifierFlags.contains(.shift) ? finePxPerUnit : pxPerUnit
+        let newValue = max(0, min(127, Int(Double(dragStartValue) + deltaFromStart / px)))
+        if newValue != currentValue {
+            currentValue = newValue
+            onChange?(newValue)
         }
     }
 
-    deinit {
-        if let m = scrollMonitor { NSEvent.removeMonitor(m) }
+    override func mouseUp(with event: NSEvent) {
+        defer { isDragging = false }
+        guard !isDragging else { return }
+
+        // Single click — no drag occurred
+        if event.modifierFlags.contains(.option) {
+            // Option+click: reset to default
+            currentValue = defaultValue
+            onChange?(defaultValue)
+        } else {
+            // Left half = −10%,  Right half = +10%
+            let locInView = convert(event.locationInWindow, from: nil)
+            let step = 13   // 127 × 0.10 ≈ 12.7 → 13 units
+            let newValue: Int
+            if locInView.x > bounds.midX {
+                newValue = min(127, currentValue + step)
+            } else {
+                newValue = max(0, currentValue - step)
+            }
+            currentValue = newValue
+            onChange?(newValue)
+        }
+    }
+
+    // MARK: - Scroll Wheel
+
+    override func scrollWheel(with event: NSEvent) {
+        let delta = Double(event.deltaY)
+        if abs(delta) > 0.001 {
+            onScroll?(delta)
+        } else {
+            // Pass unhandled scroll to the next responder (e.g. ScrollView)
+            super.scrollWheel(with: event)
+        }
     }
 }
 
