@@ -117,6 +117,30 @@ The fix is simple: use `array.indices` (the position numbers 0, 1, 2, 3) as IDs 
 
 ---
 
+## Swift Package Manager's Secret Identity Crisis
+
+Here's a quirk that bit us: when you add a local Swift package as a dependency, SPM identifies it by its **folder name**, not the `name` field inside `Package.swift`.
+
+So if your package lives at `~/utils/swift/` and inside `Package.swift` you wrote `name: "ProgressTracker"`, you'd think the package is called "ProgressTracker". Nope — SPM calls it "swift" (the folder).
+
+When you try to reference the product in your app's target dependencies:
+```swift
+// This fails — SPM doesn't know "ProgressTracker" as a package name
+dependencies: ["ProgressTracker"]
+
+// This also fails
+dependencies: [.product(name: "ProgressTracker", package: "ProgressTracker")]
+
+// This works — "swift" is the folder name, "ProgressTracker" is the product
+dependencies: [.product(name: "ProgressTracker", package: "swift")]
+```
+
+The mental model: the `name` in `Package.swift` is what shows up in Xcode's UI and in published packages on package registries. But for local path-based packages, SPM uses the directory name as its internal handle. It's like naming your dog "Sir Fluffington" on his vet registration but calling him "Buddy" at home — SPM only knows the home name.
+
+**Takeaway:** When naming your local utility folders, pick something unambiguous. Naming a Swift package folder "swift" is technically fine but confusing — something like "ProgressTracker" or "swift-utils" would have made the `package:` reference more intuitive.
+
+---
+
 ## What's Next (Future Phases)
 - Visual polish and hardware testing
 - iOS companion app (the architecture is already portable)
