@@ -141,6 +141,71 @@ The mental model: the `name` in `Package.swift` is what shows up in Xcode's UI a
 
 ---
 
+## The "Ghost State" Problem — Why Your UI Lies to You
+
+This session had one recurring villain: **a class pretending to be a value type**.
+
+`PedalState` is a Swift **class** (`class PedalState: ObservableObject`). When you change a knob, the app calls `state.values[cc] = newValue`. This mutation fires `state.objectWillChange` — which tells SwiftUI "hey, re-render anything subscribed to *state*."
+
+But the UI subscribes to `viewModel`, not `state` directly. The `PedalViewModel` has `@Published var state: PedalState`. SwiftUI only watches for changes to the *reference* — i.e., "did `state` get replaced with a new PedalState object?" When you mutate `state.values`, the reference doesn't change. So `viewModel.objectWillChange` never fires. And all the views watching `viewModel`? They just... don't update.
+
+This is the "ghost state" problem — the data changed, but the UI didn't notice.
+
+### We hit this bug in three different places:
+
+**1. Knob visuals during drag** — You'd drag a knob and nothing moved until you released. The fix: `@State var liveValue` inside RotaryKnob. `@State` is local to the view and always triggers an immediate re-render, bypassing the whole ViewModel observation chain entirely.
+
+**2. Bat switch not animating on click** — Same thing. `@State var liveIndex` inside ToggleSwitch3Way gave the bat immediate visual feedback.
+
+**3. DipSwitchPanel stale after preset load** — When you loaded a preset, the dip switches didn't update. The fix this time: add a **Combine pipeline** in PedalViewModel that forwards `state.objectWillChange` to `viewModel.objectWillChange`:
+
+```swift
+stateCancellable = state.objectWillChange
+    .sink { [weak self] _ in self?.objectWillChange.send() }
+```
+
+Now every mutation to `state.values` (preset loads, resets) propagates correctly to all observing views.
+
+**The lesson:** If a SwiftUI `@ObservableObject` contains a *class* property (not a struct), mutations to that inner class's properties are invisible to observers of the outer object. You either fix it at the source (forwarding) or at the view level (local `@State`). Both are valid — use forwarding for panels that need to reflect external changes, use `@State` for interactive controls that need to be instantaneous.
+
+---
+
+## SwiftUI Gesture Hit-Testing on macOS — A Minefield
+
+Building the bat switch and knob interactions taught us that **SwiftUI's gesture system on macOS has several gotchas that don't exist on iOS**.
+
+### Gotcha 1: `Color.clear` doesn't receive taps on macOS
+
+If you put a `Button` with a `Color.clear` background, the button won't respond to clicks on macOS. The workaround: `Color.white.opacity(0.001)` — technically visible but imperceptibly so, and it hits.
+
+### Gotcha 2: Overlay buttons get clipped to the parent frame
+
+If you put 32pt-tall buttons as an `.overlay()` on an 18pt ZStack, the buttons physically exist outside the 18pt frame but **SwiftUI's hit-testing only covers the layout frame**. The overflow area is invisible to the gesture system. This wasted several attempts trying to get bat switch clicks to work.
+
+The fix: use `.onTapGesture { location in }` or `DragGesture(minimumDistance:0)` on the **parent** container with `.contentShape(Rectangle())`, so the entire parent area (including label rows above and name below) is one unified hit target.
+
+### Gotcha 3: `.global` vs `.local` coordinate space
+
+`DragGesture(coordinateSpace: .global)` gives you the cursor position in screen coordinates — `startLocation.x` could be 800, 1200, whatever. When we checked `startLocation.x > 29` to determine "did the user click the right half of the 58pt knob?", it was almost always true. The fix: `.local` gives you coordinates relative to the view itself (0–58), so `> 29` actually means "right half."
+
+### Gotcha 4: Tooltips only work on the view that receives mouse events
+
+`.help("some tooltip")` registers a `toolTip` on the underlying AppKit NSView. macOS shows it when the cursor rests over that NSView. But if a *child* view has a gesture recognizer consuming mouse events, the *parent* view's tooltip never fires — macOS can't tell the cursor is hovering over the parent because the child is in the way. Move `.help()` to the **innermost interactive view**, not a parent container.
+
+---
+
+## MIDI Channels — Why Your Pedals Are Talking Over Each Other
+
+Two pedals. Both on channel 2. You move a knob in the Brothers AM column. Both pedals receive the message. Chaos.
+
+Brothers AM and MOOD MKII share **28 overlapping CC numbers** — including all the main knobs (CC 14–19) and all dip switches (CC 61–68, 71–78). They just happen to use the same CC numbers for different things. There's no conflict in the physical pedals themselves — they'd never be on the same channel in real life.
+
+The solution is setting each pedal to a **different MIDI channel** on the hardware. Chase Bliss does this via **CC 104** — the "change my channel" command. The value is `targetChannel - 1` (so channel 3 = value 2). Crucially, it must be sent on the pedal's *current* channel — you can't send on the new channel to change to it, because the pedal isn't listening there yet.
+
+We built this into the app: the "Set Channel" button sends CC 104 on the current channel, then updates the app to match. One click, no manual hardware button-pressing.
+
+---
+
 ## What's Next (Future Phases)
 - Visual polish and hardware testing
 - iOS companion app (the architecture is already portable)

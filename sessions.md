@@ -194,6 +194,44 @@
 
 ---
 
+## Session 7 — UX Overhaul: Controls, Presets & MIDI Channel Management
+
+**Date:** 02.19.2026
+**Time spent:** ~2h 30m
+
+### What We Built
+- **RotaryKnob** — full rewrite: `DragGesture(.local)` + `@State liveValue` for real-time visual updates; velocity-based acceleration (slow drag = 5px/unit, fast = 1px/unit); click snaps to nearest 10% grid `[0,13,25,38,51,64,76,89,102,114,127]`; fixed left-half click (was broken by `.global` coordinate space bug)
+- **ToggleSwitch3Way** — `DragGesture(minimumDistance:0)` on VStack with `.frame(width:trackWidth)` to anchor local coordinate space; `@State liveIndex` for immediate bat animation (same class-mutation fix as knobs)
+- **Tooltip fix** — moved `.help()` from outer containers onto the interactive view layer (knobBody ZStack, switchBody ZStack) so macOS tooltip system fires correctly
+- **DipSwitch** — housing tinted with `theme.backgroundGradient` colors; label bumped to 9pt medium with drop shadow; panel background more opaque
+- **PresetPanel** — shrunk to 140–165px; single-click to load; active preset highlighted with accent border; inline notes removed (shown as hover tooltip); reset-to-defaults button (↺)
+- **Combine forwarding** — `state.objectWillChange` forwarded to `viewModel.objectWillChange` so DipSwitchPanel and HiddenSettingsPanel re-render on preset load (hidden features now visible after loading a preset)
+- **FactoryPresets** — seed key v4; `cleanupDuplicates()` removes accumulated duplicates; name-based dedup prevents future stacking
+- **MIDI channel management** — `setPedalMidiChannel(to:)` sends CC 104 on the current channel then updates app; "Set Channel" sheet with current→new picker, CC 104 explanation, and cross-pedal channel conflict warning
+- **ProgressTracker** — integrated into session workflow for multi-step task progress display
+
+### What Shipped
+- `swift build` clean (Build complete)
+- Commit `e00e955` pushed to `bryanfosler/midi-control`
+- Both pedals can now run on separate MIDI channels without cross-talk
+
+### Bugs Fixed
+- **Bat switches not clicking** — root cause: `DragGesture(minimumDistance:0)` not previously used; `onTapGesture { location in }` was unreliable on macOS; `DragGesture.onEnded` with `.local` coordinate space is reliable
+- **Bat switch visual not updating** — `PedalState` is a class; binding mutations fire `state.objectWillChange` but not `viewModel.objectWillChange`; fixed with `@State liveIndex`
+- **Knob left-half click never fired** — `coordinateSpace: .global` made `startLocation.x` a screen-absolute value (always > 29); switching to `.local` fixed it
+- **Duplicate presets** — UUID-based file storage + versioned seed keys = new files each seed; fixed with `cleanupDuplicates()` and name-based dedup check
+- **Hover tooltips lost** — `.help()` placed on parent container, not the interactive NSView layer; macOS tooltip system needs it on the view that actually receives hover
+- **HiddenSettingsPanel stale after preset load** — no Combine forwarding from `state` to `viewModel`; adding it makes all observing views re-render on preset load
+
+### Decisions Made
+- `DragGesture(minimumDistance: 0, coordinateSpace: .local)` is the reliable macOS SwiftUI tap+drag pattern — avoids Button hit-testing issues and unreliable `onTapGesture` with location
+- `.help()` must be on the **same view** as the gesture for macOS tooltip detection to work
+- Combine forwarding (`state.objectWillChange → viewModel.objectWillChange`) is the correct fix for class-based ObservableObject propagation — better than per-view `@State` workarounds for non-interactive views
+- CC 104 = Chase Bliss MIDI channel change command; must be sent on the pedal's **current** channel with value = (newChannel − 1)
+- Brothers AM and MOOD MKII share 28 overlapping CC numbers — different MIDI channels are **required**, not optional
+
+---
+
 ## Backlog / Ideas
 
 *Things mentioned but not built yet:*
