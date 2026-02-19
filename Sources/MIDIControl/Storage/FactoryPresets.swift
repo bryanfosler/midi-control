@@ -11,12 +11,11 @@ enum FactoryPresets {
     /// Seed factory presets for all pedals if they haven't been created yet.
     /// Uses UserDefaults to avoid re-seeding on every launch.
     static func seedIfNeeded(storage: PresetStorage) {
-        let key = "factoryPresetsSeeded_v2"
+        let key = "factoryPresetsSeeded_v3"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
 
-        for preset in brothersAMPresets {
-            storage.save(preset)
-        }
+        for preset in brothersAMPresets { storage.save(preset) }
+        for preset in moodMKIIPresets  { storage.save(preset) }
 
         UserDefaults.standard.set(true, forKey: key)
     }
@@ -349,5 +348,157 @@ enum FactoryPresets {
         ],
         notes: "Treble booster idea from manual. Half Sun + Dist (Ch2). Ch1 acts as an optional boost/lift when engaged. Focused and punchy. Approximate — tweak to taste.",
         tags: ["treble-boost", "distortion", "boost", "manual"]
+    )
+
+    // MARK: - MOOD MKII Presets
+
+    /// All MOOD MKII presets, sourced from manual ideas and mode demonstrations.
+    static let moodMKIIPresets: [Preset] = [
+        moodAmbientStarter,
+        moodReverbFreeze,
+        moodSelfStretchLoop,
+        moodLoFiTapeEcho,
+        moodSlipHarmonizer,
+        moodTextureFactory,
+    ]
+
+    /// AMBIENT STARTER
+    /// The "good default" from the Getting Started page of the manual (pg. 6–7).
+    /// Reverb mode, Clock slightly lower for texture. A reliable launching point
+    /// for any ambient or textural exploration.
+    private static let moodAmbientStarter = Preset(
+        name: "Ambient Starter",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 45,   // Time — moderate reverb size/decay
+            15: 80,   // Mix — mostly wet
+            16: 64,   // Length — center
+            17: 20,   // Modify (Wet) — low = multi-tap territory, smear up from here
+            18: 45,   // Clock — slightly lower for texture and lo-fi color
+            19: 64,   // Modify (Loop) — center
+            21: 0,    // Wet Channel — Reverb
+            22: 64,   // Routing — Parallel (input + loop feed wet)
+            23: 64,   // Micro-Looper — Tape
+        ],
+        notes: "Based on the Getting Started page. Reverb with slightly lowered Clock for texture. Turn down Clock further for more grit. Roll up Modify to go from multi-tap clusters to washed-out reverb. Approximate — tweak to taste.",
+        tags: ["reverb", "ambient", "starter", "manual"]
+    )
+
+    /// REVERB FREEZE PAD
+    /// Reverb mode set for a percussive frozen pattern. Modify down = multi-tap
+    /// pattern. Engage Freeze to hold it. Once frozen, slowly increase Modify
+    /// to smear the pattern into an ambient wash — you can't go back once smeared.
+    private static let moodReverbFreeze = Preset(
+        name: "Reverb Freeze Pad",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 70,   // Time — longer decay / larger room
+            15: 90,   // Mix — very wet
+            16: 64,   // Length
+            17: 10,   // Modify (Wet) — low = distinct multi-tap pattern when frozen
+            18: 55,   // Clock — slightly reduced for warmth
+            19: 64,   // Modify (Loop)
+            21: 0,    // Wet Channel — Reverb
+            22: 0,    // Routing — Input Only
+            23: 64,   // Micro-Looper — Tape
+        ],
+        notes: "Freeze Ideas (manual pg. 22). Reverb with Modify down = frozen percussive pattern. Use Freeze button to lock it. Slowly raise Modify after freezing to smear into ambient pad — irreversible once smeared. Approximate — tweak to taste.",
+        tags: ["reverb", "freeze", "ambient", "manual"]
+    )
+
+    /// SELF-STRETCH LOOP
+    /// Delay mode with max feedback — behaves like a looper. Once audio is
+    /// looping, slowly rotate Time clockwise: the delay 'stretches' the loop.
+    /// A recorded trick from the manual's Loop Tricks section.
+    private static let moodSelfStretchLoop = Preset(
+        name: "Self-Stretch Loop",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 50,   // Time — moderate delay, then sweep CW after loop established
+            15: 85,   // Mix — mostly wet
+            16: 64,   // Length
+            17: 127,  // Modify (Wet) — max feedback: repeats pile up like a looper
+            18: 64,   // Clock — clean, hi-fi
+            19: 64,   // Modify (Loop)
+            21: 64,   // Wet Channel — Delay
+            22: 127,  // Routing — W>L: looper channel feeds through wet delay
+            23: 64,   // Micro-Looper — Tape
+        ],
+        notes: "Loop Tricks (manual pg. 24). Max Delay feedback = stable looping. Slowly rotate Time CW while looping to create a self-stretching effect recorded into the loop. Approximate — tweak to taste.",
+        tags: ["delay", "loop", "stretch", "manual"]
+    )
+
+    /// LO-FI TAPE ECHO
+    /// The Balance Beam technique from the Tape mode section (manual pg. 33).
+    /// Clock lowered for grit and character. Modify (Loop) raised to speed the
+    /// loop back up to match played tempo — same speed, but dirtier and more
+    /// characterful. Classic lo-fi texture.
+    private static let moodLoFiTapeEcho = Preset(
+        name: "Lo-Fi Tape Echo",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 55,   // Time — moderate reverb color
+            15: 70,   // Mix — balanced
+            16: 64,   // Length — normal loop size
+            17: 30,   // Modify (Wet) — slight smear
+            18: 22,   // Clock — low = lo-fi, gritty, longer loops
+            19: 100,  // Modify (Loop) — speed up loop to compensate for lower Clock
+            21: 0,    // Wet Channel — Reverb (adds ambient layer)
+            22: 64,   // Routing — Parallel
+            23: 64,   // Micro-Looper — Tape
+        ],
+        notes: "Balance Beam technique (manual pg. 33). Lower Clock for grit and character. Raise Modify (Loop) to play the loop back at roughly normal speed despite the lo-fi Clock. Same tempo, more texture. Approximate — tweak to taste.",
+        tags: ["looper", "lo-fi", "tape", "manual"]
+    )
+
+    /// SLIP HARMONIZER
+    /// Slip mode functions as a continuous pitch-shifter / auto-harmonizer.
+    /// Lower Time = pitch-shifter feel with instant response. Modify slightly
+    /// above center = gentle pitch-up in semitone steps. Great for subtle
+    /// harmonies following your playing.
+    private static let moodSlipHarmonizer = Preset(
+        name: "Slip Harmonizer",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 25,   // Time — low = pitch-shifter feel, instant response
+            15: 55,   // Mix — balanced, don't lose the dry signal
+            16: 64,   // Length
+            17: 70,   // Modify (Wet) — slightly above center = gentle pitch-up
+            18: 64,   // Clock — hi-fi for clean pitch shifting
+            19: 64,   // Modify (Loop)
+            21: 127,  // Wet Channel — Slip
+            22: 0,    // Routing — Input Only
+            23: 64,   // Micro-Looper — Tape
+        ],
+        notes: "Slip mode as a pitch-harmonizer (manual pg. 26). Low Time = immediate pitch-shifting. Modify above center = harmonies following your playing in semitone steps. Move Modify to transpose. Approximate — tweak to taste.",
+        tags: ["slip", "pitch", "harmonizer", "manual"]
+    )
+
+    /// TEXTURE FACTORY
+    /// Both channels working together: micro-loop fed through Reverb for
+    /// maximum ambience. Low Clock for grit. The looper continuously captures
+    /// the reverb trails as they happen — each loop is unique.
+    private static let moodTextureFactory = Preset(
+        name: "Texture Factory",
+        pedalId: "mood-mkii",
+        midiChannel: 2,
+        parameters: [
+            14: 80,   // Time — long reverb trails
+            15: 95,   // Mix — very wet
+            16: 64,   // Length
+            17: 60,   // Modify (Wet) — slight smear
+            18: 35,   // Clock — lo-fi texture
+            19: 64,   // Modify (Loop) — center
+            21: 0,    // Wet Channel — Reverb
+            22: 127,  // Routing — W>L: looper feeds through reverb
+            23: 0,    // Micro-Looper — Stretch
+        ],
+        notes: "Both channels interacting (manual pg. 28–29). Micro-loop routed through Reverb. Low Clock = gritty loops. Looper captures reverb trails in always-listening state. Stretch mode on looper for time-stretching exploration. Approximate — tweak to taste.",
+        tags: ["ambient", "texture", "reverb", "loop", "manual"]
     )
 }

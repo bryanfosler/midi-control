@@ -2,7 +2,7 @@ import SwiftUI
 
 /// A horizontal bat-style toggle switch matching real metal guitar pedal toggles.
 /// Options are arranged left-to-right; the bat lever slides between positions.
-/// Labels appear above each slot. Per-slot tap areas ensure reliable interaction.
+/// Labels appear above each slot. Per-slot Buttons ensure reliable click interaction.
 struct ToggleSwitch3Way: View {
     let parameter: ParameterDefinition
     let options: [ToggleOption]
@@ -16,10 +16,7 @@ struct ToggleSwitch3Way: View {
         var bestDist = Int.max
         for i in 0..<options.count {
             let dist = abs(options[i].value - value)
-            if dist < bestDist {
-                bestDist = dist
-                bestIndex = i
-            }
+            if dist < bestDist { bestDist = dist; bestIndex = i }
         }
         return bestIndex
     }
@@ -51,7 +48,7 @@ struct ToggleSwitch3Way: View {
             }
             .frame(width: trackWidth)
 
-            // ── Switch housing ──
+            // ── Switch housing (visual only — no gesture here) ──
             ZStack {
                 // Housing outer shadow
                 RoundedRectangle(cornerRadius: 5)
@@ -62,21 +59,17 @@ struct ToggleSwitch3Way: View {
 
                 // Housing body
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(white: 0.14), Color(white: 0.22)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .fill(LinearGradient(
+                        colors: [Color(white: 0.14), Color(white: 0.22)],
+                        startPoint: .top, endPoint: .bottom
+                    ))
                     .frame(width: trackWidth, height: trackHeight)
                     .overlay(
                         RoundedRectangle(cornerRadius: 5)
                             .strokeBorder(
                                 LinearGradient(
                                     colors: [Color(white: 0.42), Color(white: 0.20)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
+                                    startPoint: .top, endPoint: .bottom
                                 ),
                                 lineWidth: 0.75
                             )
@@ -106,20 +99,25 @@ struct ToggleSwitch3Way: View {
                         .interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
                         value: selectedIndex
                     )
-
-                // ── Tap targets (one transparent rect per slot) ──
-                // Note: Color.clear does not receive hit-testing on macOS —
-                // use opacity(0.001) so the view is invisible but clickable.
-                HStack(spacing: 0) {
-                    ForEach(0..<options.count, id: \.self) { i in
-                        Color.white.opacity(0.001)
-                            .frame(width: slotWidth, height: trackHeight + 14)
-                            .contentShape(Rectangle())
-                            .onTapGesture { select(index: i) }
-                    }
-                }
             }
             .frame(width: trackWidth, height: trackHeight)
+            // Tap targets overlaid on the housing.
+            // Using Button (not onTapGesture) for reliable macOS click handling.
+            // Height extends above/below the housing for a generous tap area.
+            // The overlay is NOT clipped to the ZStack frame, so the full
+            // tapHeight is available even though the housing is only trackHeight.
+            .overlay(
+                HStack(spacing: 0) {
+                    ForEach(0..<options.count, id: \.self) { i in
+                        Button { select(index: i) } label: {
+                            Color.white.opacity(0.001)
+                                .frame(width: slotWidth, height: tapHeight)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            )
 
             // ── Parameter name ──
             Text(parameter.name)
@@ -145,17 +143,14 @@ struct ToggleSwitch3Way: View {
 
             // Bat body — chrome metallic gradient
             RoundedRectangle(cornerRadius: 3.5)
-                .fill(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(white: 0.93), location: 0.0),
-                            .init(color: Color(white: 0.78), location: 0.40),
-                            .init(color: Color(white: 0.60), location: 1.0),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .fill(LinearGradient(
+                    stops: [
+                        .init(color: Color(white: 0.93), location: 0.0),
+                        .init(color: Color(white: 0.78), location: 0.40),
+                        .init(color: Color(white: 0.60), location: 1.0),
+                    ],
+                    startPoint: .top, endPoint: .bottom
+                ))
                 .frame(width: batWidth, height: batHeight)
 
             // Top specular highlight strip
@@ -164,7 +159,7 @@ struct ToggleSwitch3Way: View {
                 .frame(width: batWidth * 0.50, height: 2)
                 .offset(y: -(batHeight * 0.35))
 
-            // Side sheen line (left side)
+            // Side sheen line
             Rectangle()
                 .fill(Color.white.opacity(0.22))
                 .frame(width: 1, height: batHeight * 0.55)
@@ -174,11 +169,12 @@ struct ToggleSwitch3Way: View {
 
     // MARK: - Dimensions
 
-    private var slotWidth: CGFloat  { 26 }
-    private var trackWidth: CGFloat { slotWidth * CGFloat(options.count) }
+    private var slotWidth:   CGFloat { 26 }
+    private var trackWidth:  CGFloat { slotWidth * CGFloat(options.count) }
     private var trackHeight: CGFloat { 18 }
-    private var batWidth: CGFloat   { slotWidth - 5 }
-    private var batHeight: CGFloat  { trackHeight - 3 }
+    private var tapHeight:   CGFloat { 32 }   // generous tap area = trackHeight + 14
+    private var batWidth:    CGFloat { slotWidth - 5 }
+    private var batHeight:   CGFloat { trackHeight - 3 }
 
     private var batOffset: CGFloat {
         let trackCenter = trackWidth / 2
