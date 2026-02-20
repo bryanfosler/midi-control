@@ -17,6 +17,7 @@ struct RotaryKnob: View {
     let onChange: (Int) -> Void
     let theme: PedalColorTheme
     var pedalId: String = ""
+    var overrideIndicatorColor: Color? = nil
 
     private let minAngle: Double = -135
     private let maxAngle: Double =  135
@@ -116,7 +117,7 @@ struct RotaryKnob: View {
 
             // ── Indicator line ──
             RoundedRectangle(cornerRadius: 1.5)
-                .fill(theme.knobIndicatorColor)
+                .fill(overrideIndicatorColor ?? theme.knobIndicatorColor)
                 .frame(width: 2.5, height: 10)
                 .offset(y: -13)
                 .rotationEffect(.degrees(rotation))

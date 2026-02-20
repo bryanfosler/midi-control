@@ -7,6 +7,13 @@ struct BypassButton: View {
     let onTap: () -> Void
     var theme: PedalColorTheme? = nil
     var pedalId: String = ""
+    /// Optional text badge that replaces the LED dot (e.g. "1", "2" for Brothers AM channels)
+    var badgeLabel: String? = nil
+    var badgeColor: Color? = nil
+    var badgeLabelColor: Color = .white
+    /// Optional SF Symbol badge that replaces the LED dot (e.g. "drop.fill", "moon.fill" for MOOD)
+    var badgeIcon: String? = nil
+    var badgeIconColor: Color? = nil
 
     @State private var isPressed = false
 
@@ -16,7 +23,7 @@ struct BypassButton: View {
 
     var body: some View {
         VStack(spacing: 5) {
-            ledIndicator
+            topIndicator
             footswitchBody
             Text(parameter.name)
                 .font(.system(size: 9, weight: .medium))
@@ -25,6 +32,29 @@ struct BypassButton: View {
                 .minimumScaleFactor(0.7)
         }
         .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
+    }
+
+    @ViewBuilder
+    private var topIndicator: some View {
+        if let label = badgeLabel, let color = badgeColor {
+            // Colored circle badge with text (e.g. "1" or "2" for Brothers AM channels)
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 18, height: 18)
+                Text(label)
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(badgeLabelColor)
+            }
+        } else if let icon = badgeIcon, let color = badgeIconColor {
+            // SF Symbol badge (e.g. droplet or moon for MOOD)
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+                .frame(width: 18, height: 18)
+        } else {
+            ledIndicator
+        }
     }
 
     // MARK: - LED
