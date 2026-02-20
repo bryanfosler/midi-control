@@ -509,6 +509,111 @@ For each 1/4" TRS jack:
 └────────────────────────────────────────────────────────┘
 ```
 
+### 1590B Drilling & Wire Reference
+
+#### Drilling Template — Top Face
+
+```
+HAMMOND 1590B  (~4.4" × 2.3" top face)
+◄─────────────────── 4.4" ──────────────────►
+
+┌──────────────────────────────────────────────────┐  ▲
+│                                                  │  │
+│  (●)      [ ]      [ ]      [ ]      [ ]         │  │
+│  5/8"    SLOT     SLOT     SLOT     SLOT          │  │
+│   DIN    SW 1     SW 2     SW 3     SW 4          │ 2.3"
+│                                                  │  │
+│   ●         ●        ●        ●        ●          │  │
+│  3/8"     3/8"     3/8"     3/8"     3/8"         │  │
+│  TRS 1    TRS 2    TRS 3    TRS 4                 │  ▼
+└──────────────────────────────────────────────────┘
+
+  ●  = Round hole (step bit)
+  [ ] = Slot for switch knob (~3mm × 8mm — drill + file, or Dremel)
+```
+
+> Tip: Use a center punch on each mark before drilling to keep the bit from skating on the aluminum.
+
+#### Hole Sizes
+
+| Component | Hole Size | Qty |
+|-----------|-----------|-----|
+| 5-pin DIN jack | **5/8" (16mm)** | 1 |
+| 1/4" TRS jack | **3/8" (9.5mm)** | 4 |
+| Slide switch slot | **~3mm × 8mm slot** | 4 |
+
+---
+
+#### Wire Cut Sheet
+
+Cut all wires before soldering. Strip 1/4" (~6mm) off each end.
+
+| # | Color | Length | From | To |
+|---|-------|--------|------|----|
+| 1 | **Black** | 5" | DIN Pin 2 | TRS 1 Sleeve |
+| 2 | **Black** | 3" | TRS 1 Sleeve | TRS 2 Sleeve |
+| 3 | **Black** | 3" | TRS 2 Sleeve | TRS 3 Sleeve |
+| 4 | **Black** | 3" | TRS 3 Sleeve | TRS 4 Sleeve |
+| 5 | **Red** | 5" | DIN Pin 5 | SW 1 Common (C) |
+| 6 | **Red** | 2" | SW 1 Common | SW 2 Common |
+| 7 | **Red** | 2" | SW 2 Common | SW 3 Common |
+| 8 | **Red** | 2" | SW 3 Common | SW 4 Common |
+| 9 | **White** | 3" | SW 1 Pin 1 | TRS 1 Ring |
+| 10 | **White** | 3" | SW 2 Pin 1 | TRS 2 Ring |
+| 11 | **White** | 3" | SW 3 Pin 1 | TRS 3 Ring |
+| 12 | **White** | 3" | SW 4 Pin 1 | TRS 4 Ring |
+| 13 | **Yellow** | 3" | SW 1 Pin 2 | TRS 1 Tip |
+| 14 | **Yellow** | 3" | SW 2 Pin 2 | TRS 2 Tip |
+| 15 | **Yellow** | 3" | SW 3 Pin 2 | TRS 3 Tip |
+| 16 | **Yellow** | 3" | SW 4 Pin 2 | TRS 4 Tip |
+
+**Total: 16 wires.** Cut a couple extra 3" blacks in case you need slack on the ground bus.
+
+#### Color Legend
+
+```
+BLACK  ─── Ground        DIN Pin 2 → all TRS Sleeves (daisy-chained)
+RED    ─── MIDI Signal   DIN Pin 5 → all Switch Commons (daisy-chained)
+WHITE  ─── Ring output   Switch Pin 1 → TRS Ring    (Chase Bliss = LEFT)
+YELLOW ─── Tip output    Switch Pin 2 → TRS Tip     (Strymon/Meris = RIGHT)
+```
+
+#### Solder Point Map
+
+```
+DIN JACK (solder side, looking in from back of panel)
+
+   /  1   2  \
+  │     3     │   Pin 2 (Ground) ──► BLACK wires  ──► all TRS Sleeves
+  │  4     5  │   Pin 5 (Signal) ──► RED wires    ──► all Switch C pins
+   \─────────/
+
+
+SPDT SWITCH (bottom, 3 solder pins)
+
+  ┌─────────────────┐
+  │   1     C     2 │
+  └───┬─────┬─────┬─┘
+      │     │     │
+    WHITE   RED  YELLOW
+    (Ring) (Sig) (Tip)
+      │     │     │
+      ▼     ▼     ▼
+    TRS   DIN   TRS
+    Ring  Pin 5  Tip
+
+
+TRS JACK (rear, 3 solder lugs)
+
+  ┌──────────────────┐
+  │ Tip    ◄── YELLOW (from Switch Pin 2)  │
+  │ Ring   ◄── WHITE  (from Switch Pin 1)  │
+  │ Sleeve ◄── BLACK  (from Ground bus)    │
+  └──────────────────┘
+```
+
+---
+
 ### Build Steps
 
 **1. Prepare the Enclosure**

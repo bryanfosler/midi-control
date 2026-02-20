@@ -327,11 +327,10 @@ struct PedalEnclosure: View {
         }
     }
 
-    /// Chase Bliss logo — standing figure silhouette (their brand mark)
+    /// Chase Bliss Audio logo — circular badge with "CB" lettermark.
+    /// The real CB logo is a circle containing stylized "CB" initials.
     private var cbLogo: some View {
-        Image(systemName: "figure.stand")
-            .font(.system(size: 18, weight: .regular))
-            .foregroundStyle(Color.white.opacity(0.30))
+        CBLogoMark()
     }
 
     // MARK: - Helpers
@@ -486,9 +485,9 @@ private struct BrothersBrand: View {
         HStack(alignment: .center, spacing: 6) {
             Spacer(minLength: 8)
 
-            // "Brothers" — large white bold italic serif
+            // "Brothers" — large white condensed italic (matches real pedal lettering)
             Text("Brothers")
-                .font(.system(size: 32, weight: .black, design: .serif))
+                .font(.system(size: 34, weight: .heavy))
                 .italic()
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.55), radius: 3, y: 2)
@@ -512,15 +511,9 @@ private struct AMBadge: View {
 
     var body: some View {
         ZStack {
-            // Sun ray shape — drop shadow first
+            // Star outline — gold stroke (not filled), clean outline look
             StarburstShape(spikes: spikes, outerRadius: outerR, innerRadius: innerR)
-                .fill(Color.black.opacity(0.30))
-                .blur(radius: 2)
-                .offset(y: 1)
-
-            // Sun rays — vivid gold
-            StarburstShape(spikes: spikes, outerRadius: outerR, innerRadius: innerR)
-                .fill(Color(red: 0.98, green: 0.80, blue: 0.15))
+                .stroke(Color(red: 0.98, green: 0.80, blue: 0.15), lineWidth: 1.5)
 
             // Sun body circle — slightly deeper gold
             Circle()
@@ -576,5 +569,35 @@ private struct StarburstShape: Shape {
         }
         path.closeSubpath()
         return path
+    }
+}
+
+// MARK: - Chase Bliss Audio Logo Mark
+//
+// The CB logo: a thin circle ring with "CB" text centered inside.
+// Rendered at ~26pt to fit comfortably between the two footswitches.
+
+private struct CBLogoMark: View {
+    var body: some View {
+        ZStack {
+            // Outer ring
+            Circle()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.50), Color.white.opacity(0.20)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
+                .frame(width: 26, height: 26)
+
+            // "CB" initials — tight tracking, condensed weight
+            Text("CB")
+                .font(.system(size: 9, weight: .bold, design: .default))
+                .tracking(0.5)
+                .foregroundStyle(Color.white.opacity(0.45))
+        }
+        .frame(width: 26, height: 26)
     }
 }

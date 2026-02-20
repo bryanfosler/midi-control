@@ -104,6 +104,10 @@ struct ToggleSwitch3Way: View {
                 }
                 .frame(width: trackWidth)
 
+                // Hex mounting nut detail — visible at center of mechanism
+                HexNut(size: trackHeight - 2)
+                    .opacity(0.55)
+
                 // ── Metal bat lever ──
                 batView
                     .offset(x: batOffset)
@@ -152,19 +156,26 @@ struct ToggleSwitch3Way: View {
     //   Right position  → dome tilted right → portrait oval rotated +22°
 
     private var batView: some View {
-        // Center = circle; left/right = portrait oval + rotation
+        // Center = circle viewed from straight above.
+        // Left/Right = bat tilts along its pivot axis — from above this looks like
+        // a vertical (portrait) oval that shifts horizontally toward the selected side.
+        // NO rotation: the oval stays upright (90°) at all times.
         let isCenter  = options.count == 3 && liveIndex == 1
-        let batDiameter: CGFloat = trackHeight - 4        // base dimension (14 pt)
-        let ovalW: CGFloat = batDiameter * (isCenter ? 1.0 : 0.80)   // 14 or ~11 pt
-        let ovalH: CGFloat = batDiameter * (isCenter ? 1.0 : 1.35)   // 14 or ~19 pt
+        let batDiameter: CGFloat = trackHeight - 4
 
-        // Rotation: left=-22°, center=0°, right=+22°
-        let rot: Double = {
-            if options.count == 2 { return liveIndex == 0 ? -22 : 22 }
+        // Tilted bat: narrower width (we see less of the dome face),
+        // taller height (the rod length becomes apparent from above).
+        let ovalW: CGFloat = batDiameter * (isCenter ? 1.0 : 0.58)
+        let ovalH: CGFloat = batDiameter * (isCenter ? 1.0 : 1.55)
+
+        // Horizontal displacement: the top of the bat leans toward the selected side.
+        let xShift: CGFloat = {
+            let d: CGFloat = slotWidth * 0.22
+            if options.count == 2 { return liveIndex == 0 ? -d : d }
             switch liveIndex {
-            case 0:  return -22
-            case 2:  return  22
-            default: return   0
+            case 0:  return -d
+            case 2:  return  d
+            default: return  0
             }
         }()
 
@@ -177,21 +188,19 @@ struct ToggleSwitch3Way: View {
                 .fill(Color.black.opacity(0.50))
                 .frame(width: ovalW + 2, height: ovalH + 2)
                 .blur(radius: 1.5)
-                .offset(y: 1.5)
-                .rotationEffect(.degrees(rot))
+                .offset(x: xShift, y: 1.5)
 
-            // Bat body
+            // Bat body — portrait oval, shifted left/right (no rotation)
             Ellipse()
                 .fill(fill)
                 .frame(width: ovalW, height: ovalH)
-                .rotationEffect(.degrees(rot))
+                .offset(x: xShift)
 
-            // Specular highlight — small oval near the dome tip
+            // Specular highlight near the top of the dome
             Ellipse()
                 .fill(Color.white.opacity(isCenter ? 0.72 : 0.55))
-                .frame(width: ovalW * 0.48, height: ovalW * 0.30)
-                .offset(y: -(ovalH * 0.28))
-                .rotationEffect(.degrees(rot))
+                .frame(width: ovalW * 0.50, height: ovalW * 0.28)
+                .offset(x: xShift, y: -(ovalH * 0.26))
         }
         .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14), value: liveIndex)
     }
@@ -219,13 +228,62 @@ struct ToggleSwitch3Way: View {
 
     // MARK: - Dimensions
 
-    private var slotWidth:   CGFloat { 26 }
+    private var slotWidth:   CGFloat { 28 }
     private var trackWidth:  CGFloat { slotWidth * CGFloat(options.count) }
-    private var trackHeight: CGFloat { 18 }
+    private var trackHeight: CGFloat { 22 }
 
     private var batOffset: CGFloat {
         let trackCenter = trackWidth / 2
         let slotCenter  = slotWidth * (CGFloat(liveIndex) + 0.5)
         return slotCenter - trackCenter
+    }
+}
+
+// MARK: - Hex Mounting Nut
+
+/// Draws a hexagonal toggle-switch mounting nut using Canvas.
+/// Mimics the chrome hex nut visible on real guitar pedal toggle switches.
+private struct HexNut: View {
+    let size: CGFloat  // overall bounding box (square)
+
+    var body: some View {
+        Canvas { ctx, size in
+            let cx = size.width  / 2
+            let cy = size.height / 2
+            let r  = min(size.width, size.height) / 2 - 0.5
+
+            // Build hexagon path (flat-top orientation)
+            var hex = Path()
+            for i in 0..<6 {
+                let angle = Double(i) * (.pi / 3) + .pi / 6
+                let pt = CGPoint(x: cx + r * CGFloat(cos(angle)),
+                                 y: cy + r * CGFloat(sin(angle)))
+                if i == 0 { hex.move(to: pt) } else { hex.addLine(to: pt) }
+            }
+            hex.closeSubpath()
+
+            // Chrome gradient fill
+            ctx.fill(hex, with: .linearGradient(
+                Gradient(stops: [
+                    .init(color: Color(white: 0.82), location: 0.00),
+                    .init(color: Color(white: 0.58), location: 0.45),
+                    .init(color: Color(white: 0.38), location: 1.00),
+                ]),
+                startPoint: CGPoint(x: cx - r, y: cy - r),
+                endPoint:   CGPoint(x: cx + r, y: cy + r)
+            ))
+
+            // Dark stroke for edge definition
+            ctx.stroke(hex, with: .color(Color(white: 0.22)), lineWidth: 0.75)
+
+            // Inner circle (center bore hole)
+            let boreR = r * 0.38
+            var bore = Path()
+            bore.addEllipse(in: CGRect(x: cx - boreR, y: cy - boreR,
+                                       width: boreR * 2, height: boreR * 2))
+            ctx.fill(bore, with: .color(Color.black.opacity(0.70)))
+            ctx.stroke(bore, with: .color(Color(white: 0.40)), lineWidth: 0.5)
+        }
+        .frame(width: size, height: size)
     }
 }

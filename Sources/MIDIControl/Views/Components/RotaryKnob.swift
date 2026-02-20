@@ -52,78 +52,130 @@ struct RotaryKnob: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
-        .frame(width: 68)
+        .frame(width: 76)
     }
 
     // MARK: - Knob Visual
+    //
+    // Design: raised dome center with an 11pt-wide knurled grip ring around it.
+    // The grip ring uses Canvas crosshatch lines for a real diamond-knurl texture.
+    // The indicator is recessed — a dark groove shadow with the color line on top.
 
     @ViewBuilder
     private var knobBody: some View {
         ZStack {
-            // ── Ring track (full 270° arc — subtle range guide) ──
+            // ── Arc track (static, 270° range guide) ──
             ArcShape(startAngle: minAngle, endAngle: maxAngle)
-                .stroke(Color.white.opacity(0.10), style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
-                .frame(width: 58, height: 58)
+                .stroke(Color.white.opacity(0.09), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                .frame(width: 66, height: 66)
 
-            // ── Active arc (min → current value) ──
+            // ── Active arc with soft glow ──
+            let arcColor = overrideIndicatorColor ?? theme.dipOnColor
             ArcShape(startAngle: minAngle, endAngle: rotation)
-                .stroke(overrideIndicatorColor ?? theme.dipOnColor,
-                        style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
-                .frame(width: 58, height: 58)
+                .stroke(arcColor.opacity(0.55), style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .frame(width: 66, height: 66)
+                .blur(radius: 5)
+            ArcShape(startAngle: minAngle, endAngle: rotation)
+                .stroke(arcColor, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                .frame(width: 66, height: 66)
 
-            // ── Knob cast shadow ──
+            // ── Drop shadow (cast below knob) ──
             Circle()
-                .fill(Color.black.opacity(0.55))
-                .frame(width: 48, height: 48)
-                .blur(radius: 4)
-                .offset(y: 3)
+                .fill(Color.black.opacity(0.65))
+                .frame(width: 54, height: 54)
+                .blur(radius: 7)
+                .offset(y: 5)
 
-            // ── Outer bevel ring ──
+            // ── Outer grip ring — dark machined aluminum base ──
             Circle()
                 .fill(LinearGradient(
-                    colors: [Color(white: 0.40), Color(white: 0.16)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
+                    colors: [Color(white: 0.42), Color(white: 0.10)],
+                    startPoint: .init(x: 0.20, y: 0.08),
+                    endPoint:   .init(x: 0.80, y: 0.92)
                 ))
-                .frame(width: 48, height: 48)
+                .frame(width: 56, height: 56)
 
-            // ── Grip tick marks (10 marks, 270° span) ──
-            ForEach(0..<10, id: \.self) { i in
-                let angle = -135.0 + Double(i) * (270.0 / 9.0)
-                Capsule()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 1.5, height: 5)
-                    .offset(y: -21)
-                    .rotationEffect(.degrees(angle))
-            }
+            // ── Diamond knurling texture on the grip ring ──
+            // Canvas clips to the ring (outerR=28, innerR=18) and draws
+            // two sets of diagonal crosshatch lines to simulate knurling.
+            KnurlingRing(outerR: 28, innerR: 18, lineSpacing: 2.8, lineOpacity: 0.40)
+                .frame(width: 56, height: 56)
 
-            // ── Main knob body (3D dome) ──
+            // ── Inner dome rim — lighter edge separating knurl from dome ──
+            Circle()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color(white: 0.55), Color(white: 0.20)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.0
+                )
+                .frame(width: 42, height: 42)
+
+            // ── Raised dome body — strong 3D shading ──
             Circle()
                 .fill(RadialGradient(
-                    colors: [
-                        Color.white.opacity(0.28),
-                        theme.knobColor,
-                        theme.knobColor.opacity(0.80),
+                    stops: [
+                        .init(color: Color.white.opacity(0.38),            location: 0.00),
+                        .init(color: theme.knobColor.opacity(0.90),        location: 0.35),
+                        .init(color: theme.knobColor,                      location: 0.65),
+                        .init(color: theme.knobColor.opacity(0.60),        location: 1.00),
                     ],
-                    center: UnitPoint(x: 0.34, y: 0.30),
-                    startRadius: 0, endRadius: 22
+                    center: UnitPoint(x: 0.30, y: 0.26),
+                    startRadius: 0, endRadius: 23
                 ))
-                .frame(width: 43, height: 43)
+                .frame(width: 40, height: 40)
 
-            // ── Specular highlight ──
+            // ── Machined lathe rings on dome top ──
+            // Fine concentric circles from CNC turning process, clipped to dome shape.
+            Canvas { ctx, sz in
+                let cx = sz.width / 2
+                let cy = sz.height / 2
+                var r: CGFloat = 3.0
+                while r < sz.width / 2 - 0.5 {
+                    var ring = Path()
+                    ring.addEllipse(in: CGRect(x: cx - r, y: cy - r,
+                                               width: r * 2, height: r * 2))
+                    ctx.stroke(ring, with: .color(Color.white.opacity(0.11)), lineWidth: 0.4)
+                    r += 2.5
+                }
+            }
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
+
+            // ── Primary specular highlight (soft, upper-left) ──
             Ellipse()
-                .fill(Color.white.opacity(0.20))
-                .frame(width: 15, height: 10)
-                .offset(x: -9, y: -12)
+                .fill(Color.white.opacity(0.22))
+                .frame(width: 17, height: 11)
+                .offset(x: -9, y: -11)
                 .blur(radius: 2.5)
 
-            // ── Indicator line ──
-            RoundedRectangle(cornerRadius: 1.5)
-                .fill(overrideIndicatorColor ?? theme.knobIndicatorColor)
-                .frame(width: 3, height: 12)
-                .offset(y: -16)
-                .rotationEffect(.degrees(rotation))
+            // ── Hot-spot specular (sharp, tight) ──
+            Circle()
+                .fill(Color.white.opacity(0.60))
+                .frame(width: 5, height: 5)
+                .offset(x: -11, y: -12)
+                .blur(radius: 1.0)
+
+            // ── Recessed indicator groove ──
+            // Three layers: shadow groove → indicator fill → highlight edge
+            // Combined they read as a line engraved into the dome surface.
+            ZStack {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.black.opacity(0.75))
+                    .frame(width: 5.5, height: 17)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(overrideIndicatorColor ?? theme.knobIndicatorColor)
+                    .frame(width: 3.5, height: 15)
+                Rectangle()
+                    .fill(Color.white.opacity(0.28))
+                    .frame(width: 1.0, height: 13)
+                    .offset(x: 1.2)
+            }
+            .offset(y: -21)
+            .rotationEffect(.degrees(rotation))
         }
-        .frame(width: 62, height: 62)
+        .frame(width: 70, height: 70)
         // Scroll wheel captured via NSView background (doesn't block SwiftUI gestures)
         .background(
             ScrollWheelCapture { delta in
@@ -253,6 +305,55 @@ private class ScrollCaptureView: NSView {
             onScroll?(delta)
         } else {
             super.scrollWheel(with: event)
+        }
+    }
+}
+
+// MARK: - Diamond Knurling Ring
+
+/// Draws a diamond crosshatch texture clipped to the ring between outerR and innerR.
+/// Two sets of diagonal lines (±45°) create the classic knurling pattern.
+private struct KnurlingRing: View {
+    let outerR: CGFloat
+    let innerR: CGFloat
+    let lineSpacing: CGFloat
+    let lineOpacity: Double
+
+    var body: some View {
+        Canvas { ctx, size in
+            let cx = size.width  / 2
+            let cy = size.height / 2
+
+            // Clip to the ring area using even-odd fill rule
+            var clip = Path()
+            clip.addEllipse(in: CGRect(x: cx - outerR, y: cy - outerR,
+                                       width: outerR * 2, height: outerR * 2))
+            clip.addEllipse(in: CGRect(x: cx - innerR, y: cy - innerR,
+                                       width: innerR * 2, height: innerR * 2))
+            ctx.clip(to: clip, style: FillStyle(eoFill: true))
+
+            let ext    = outerR + 2
+            let shading = GraphicsContext.Shading.color(Color.white.opacity(lineOpacity))
+
+            // +45° lines
+            var k: CGFloat = -(ext * 2)
+            while k <= ext * 2 {
+                var p = Path()
+                p.move(to:    CGPoint(x: cx - ext + k, y: cy - ext))
+                p.addLine(to: CGPoint(x: cx + ext + k, y: cy + ext))
+                ctx.stroke(p, with: shading, lineWidth: 0.65)
+                k += lineSpacing
+            }
+
+            // −45° lines
+            k = -(ext * 2)
+            while k <= ext * 2 {
+                var p = Path()
+                p.move(to:    CGPoint(x: cx + ext - k, y: cy - ext))
+                p.addLine(to: CGPoint(x: cx - ext - k, y: cy + ext))
+                ctx.stroke(p, with: shading, lineWidth: 0.65)
+                k += lineSpacing
+            }
         }
     }
 }
