@@ -245,6 +245,46 @@
 
 ---
 
+## Session 9 — Visual Polish: Machined Knobs, Realistic Toggles, CB Logo
+
+**Date:** 02.20.2026
+**Time spent:** ~1h 30m
+
+### What We Built
+- Concentric lathe rings on knob dome tops (Canvas-drawn, simulates CNC-machined aluminum)
+- Revised knurling texture: finer crosshatch lines, reduced opacity for realism
+- Stronger active-arc glow on knobs (wider bloom + heavier blur)
+- Realistic toggle bat behavior: portrait oval that SHIFTS horizontally (no rotation), pivot anchored at center
+- Toggle housing enlarged for better proportion
+- Chase Bliss logo: replaced `figure.stand` emoji with hand-drawn CBLogoMark (thin ring + "CB" initials)
+- AM badge: star changed from filled gold to stroke outline
+- Brothers font: switched from serif to .heavy italic (cleaner, more like real pedal)
+- 1590B drilling reference added to MIDI converter hardware build guide
+
+### What Shipped
+- Committed and pushed: `f08a53b` — all visual changes live on `main`
+- GitHub issue #13 created, time logged (1h30m), closed → Notion sync triggered
+
+### Bugs Fixed
+- Toggle bat diagonal rotation replaced with correct mechanical pivot behavior
+- CB logo was a stock emoji — now a proper drawn lettermark
+
+### Decisions Made
+- Toggle bats: perspective is now "portrait oval shifting L/R" not diagonal rotation
+- AM star: outline only (not filled), matches Analog Man badge aesthetic
+- Brothers font: .heavy italic without serif design is cleaner match to real pedal
+- Knurling kept as crosshatch (not concentric rings) on grip ring; dome gets concentric rings
+
+### Outstanding Feedback (carry to next session)
+- Bryan: "I have a lot of feedback still but you're struggling with the visuals. I might give up."
+- Knob knurling realism still needs work
+- MOOD logo area needs more impact
+- Clock knob circumference values not yet done
+- Per-channel Brothers AM color coding needs in-app verification
+- General: visual fidelity gap vs. real CB pedals — consider different approach next session
+
+---
+
 *To add a new session: copy the session template below and fill in details.*
 
 ```markdown

@@ -53,3 +53,29 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - `MIDI/MIDIManager.swift` — CoreMIDI integration
 - `ViewModels/PedalViewModel.swift` — per-pedal logic
 - `Storage/PresetStorage.swift` — preset persistence
+
+## Visual Design Reference (hard-won)
+
+### Toggle bat switches
+- Physical CB toggle switches: bat pivots from CENTER of housing
+- Correct top-down rendering: portrait oval (tall + narrow) that SHIFTS HORIZONTALLY
+- DO NOT use `rotationEffect` on the bat — it looks wrong. Use xShift + no rotation.
+- Left = oval shifts left, Center = circle, Right = oval shifts right
+- ovalW ≈ 0.58× batDiameter, ovalH ≈ 1.55× batDiameter when tilted
+
+### Knob visual layers (top to bottom in ZStack)
+1. Arc track (static 270° guide)
+2. Active arc glow (wider blurred layer) + crisp arc on top
+3. Drop shadow
+4. Outer grip ring (machined aluminum gradient)
+5. KnurlingRing (Canvas ±45° crosshatch, lineOpacity≈0.40, lineWidth≈0.65)
+6. Inner dome rim (strokeBorder)
+7. Dome body (RadialGradient)
+8. Machined lathe rings (Canvas concentric circles, clipped to dome)
+9. Specular highlights
+10. Recessed indicator groove (rotates with value)
+
+### Chase Bliss logos
+- CB logo between footswitches: thin ring + "CB" text, NOT any SF Symbol person/figure
+- AM badge (Brothers): 12-spike star OUTLINE (stroke, not fill) + filled gold circle center + "AM" text
+- MOOD brand: large bold italic "MOOD" with sunset gradient, "MKii" bottom-right corner
