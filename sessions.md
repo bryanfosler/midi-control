@@ -307,6 +307,38 @@
 
 ---
 
+---
+
+## Session 11 — Bat Switch Overhaul + Toggle Row Polish
+
+**Date:** 02.20.2026
+**Time spent:** ~2h
+
+### What We Built
+- Two complete bat switch visual variants for side-by-side comparison:
+  - **Option B** (`ToggleSwitch3Way`): thin chrome stem + dome cap using a custom `BatStem: Shape` with `Animatable` conformance for smooth spring animation
+  - **Option A** (`ToggleSwitch3WayRotating`): single tapered rotating paddle using `CGAffineTransform` inside a custom `RotatingPaddle: Shape` — no `rotationEffect` modifier needed
+- Paddle tilt increased to ±40° for a more pronounced lean
+- Option labels moved below bat switch housing; parameter name labels removed
+- Dark rectangular housing boxes stripped from bat switches — paddles now float directly on pedal face with just the hex nut
+- `HiddenSettingsPanel` background rectangle removed
+- MOOD MK2 micro-looper options renamed: ENV / Tape / Stretch
+- Brothers AM treble boost ◑ → ○ (outline sun)
+
+### What Shipped
+- `ToggleSwitch3WayRotating.swift` (new file, Option A — now active in app)
+- `ToggleSwitch3Way.swift` (reworked to Option B — kept as alternate)
+- All pedal definition + enclosure visual changes committed and pushed
+
+### Bugs Fixed
+- **Xcode "Cannot find ToggleSwitch3WayRotating in scope"** — root cause: `MIDIControl.xcodeproj` is gitignored, so new files added outside Xcode are not auto-discovered. Fix: run `xcodegen generate` after any file add/remove. Always open `.xcodeproj`, never `Package.swift`, to run the GUI app.
+
+### Decisions Made
+- Option A (rotating paddle) selected as preferred bat switch visual
+- Option B kept in codebase as `ToggleSwitch3Way` for potential future use
+- Housing box removed from toggles: real pedal aesthetic — levers mount through holes in the face, no external box
+- Always use `MIDIControl.xcodeproj` to run app; `Package.swift` builds CLI-only target
+
 *To add a new session: copy the session template below and fill in details.*
 
 ```markdown
