@@ -283,3 +283,47 @@ Then reopen `MIDIControl.xcodeproj` in Xcode.
 
 **Also important**: Always open `MIDIControl.xcodeproj` to run the app — NOT `Package.swift`. Opening `Package.swift` launches it as a Swift Package Manager project, which builds a command-line target. It compiles, but it won't launch the GUI window. The `.xcodeproj` is the one configured as a proper macOS application bundle.
 
+
+---
+
+## Fitting Stuff in a Metal Box (1590B Enclosure Planning)
+
+At some point the software has to connect to actual hardware, and that means drilling holes in an aluminum box and fitting connectors into them. Sounds simple. It requires more math than you'd think.
+
+### The 1590B Is Smaller Than It Looks
+
+The Hammond 1590B — a standard guitar pedal enclosure — measures 112mm × 60mm × 31mm on the outside. The *side panels* (the long faces where you drill jacks) are only **112mm wide and 31mm tall**. That's roughly the size of a Snickers bar standing on its edge.
+
+Now consider: a 5-pin DIN MIDI connector needs a **16mm hole**. That means its center has to be at least 8mm from any edge — leaving you only 15mm of comfortable vertical space in a 31mm panel. It physically fits, but just barely. Now try fitting two of them side-by-side with a 24mm center-to-center gap... you're doing connector Tetris.
+
+**The lesson**: Before you drill anything, do the spacing math. For each connector:
+- Find the hole diameter → divide by 2 → that's your minimum edge clearance
+- Add ~2mm for material strength (you don't want a thin sliver of aluminum at the edge)
+- Calculate center-to-center spacing: the sum of both connectors' "personal space bubbles"
+
+### Active vs Passive MIDI Thru
+
+MIDI was designed in 1983 and uses a **current loop** — the transmitting device pushes a 5mA signal through the cable and into an optocoupler in the receiving device. The receiver is completely isolated from the transmitter electrically. It's elegant.
+
+A **MIDI Thru** jack just passes the incoming signal back out again. There are two ways to do this:
+
+**Passive Thru**: Literally just wire the incoming pins to a second DIN connector. No components, no power. The same current loop drives both. Works perfectly for one thru output. This is what we're building.
+
+**Active (Buffered) Thru**: Routes the signal through an op-amp that re-drives each output independently. Requires power (~5V), but each output is isolated and properly driven. Useful if you're splitting to 4+ devices and worried about signal degradation.
+
+For a single thru output going to one more pedal? Passive is all you need. Two wires. Done.
+
+### Thinking About Cable Routing First
+
+The layout decision that mattered most wasn't "what fits?" — it was "where do I want cables coming out?"
+
+On a pedalboard, TRS cables run to pedals (forward/sideways). The MIDI input cable runs back to the Pi/interface. If everything exits from the same face, you get a cable spaghetti nightmare at that corner of the board.
+
+**Option B** — the one we picked — separates the cable types:
+- **Long side**: all 4 TRS outputs (cables go toward pedals)
+- **Short side**: both DIN connectors (MIDI cable runs toward the Pi setup)
+- **Top face**: SPDT config switches (no cables, just finger access)
+
+The cables exit in two different directions from perpendicular faces. On a pedalboard this reads as "organized." The switches on top are accessible without unplugging anything.
+
+**The meta-lesson**: When planning physical hardware, ask "where do cables go?" before "what fits?" The mechanical constraints are usually solvable — the routing is what determines whether the finished thing is annoying to live with.
