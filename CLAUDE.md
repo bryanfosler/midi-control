@@ -9,6 +9,16 @@ A native macOS SwiftUI app for controlling Chase Bliss guitar pedals via MIDI.
 - Both pedals are **receive-only** (no MIDI out) — app must track all state internally
 - Connected via USB MIDI interface (e.g., CME C2MIDI Pro)
 
+## DIY MIDI-to-TRS Converter Box (1590B)
+- **Enclosure**: Hammond 1590B — 112mm × 60mm × 31mm exterior
+- **Layout (Option B)**: TRS jacks on long side, DIN IN + DIN THRU on Short Side A, SPDT switches on top face, Short Side B blank
+- **Hole sizes**: DIN = 5/8" (16mm), TRS = 3/8" (9.5mm), switch slots = 3mm × 8mm
+- **TRS jack positions (long side)**: 16mm, 38mm, 60mm, 82mm from left, centered vertically at 15mm
+- **DIN positions (short side A)**: 18mm and 42mm from left, centered vertically at 15mm
+- **Switch positions (top face)**: 16mm, 38mm, 60mm, 82mm from left, centered at 30mm
+- **MIDI Thru**: passive (no power needed) — pins 5 and 2 of DIN THRU wired directly to DIN IN
+- **No power supply** — fully passive design; 18 wires total
+
 ## Architecture
 - **MVVM** with SwiftUI + CoreMIDI
 - `PedalDefinition` — static CC tables hardcoded in Swift (type-safe)
