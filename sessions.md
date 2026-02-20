@@ -285,6 +285,28 @@
 
 ---
 
+## Session 10 — Hardware Planning: 1590B Drilling & Wire Reference
+
+**Date:** 02.20.2026
+**Time spent:** ~20m
+
+### What We Built
+- Answered drilling and wiring questions for the MIDI-to-TRS converter box (Hammond 1590B)
+- Confirmed visual reference section in `midi-controller-complete-guide-v2.md` covering:
+  - Drilling template (top-face ASCII layout with hole sizes)
+  - Hole size table: 5/8" DIN, 3/8" x4 TRS, switch slots x4
+  - Wire cut sheet: 16 wires with length, color, and From→To for each
+  - Color legend: Black=ground, Red=signal, White=Ring, Yellow=Tip
+  - Solder point map: DIN jack, SPDT switch, and TRS jack labeled diagrams
+
+### What Shipped
+- GitHub issue #15 created, time logged (20m), closed → Notion sync triggered
+
+### Decisions Made
+- Wire color convention: Black/Red/White/Yellow (ground, signal, ring, tip) for the converter build
+
+---
+
 *To add a new session: copy the session template below and fill in details.*
 
 ```markdown
