@@ -58,7 +58,7 @@ extension PedalDefinition {
                 type: .toggle(options: [
                     ToggleOption(name: "☀",  value: 0),
                     ToggleOption(name: "Off", value: 2),
-                    ToggleOption(name: "◑",  value: 3),
+                    ToggleOption(name: "○",  value: 3),
                 ]),
                 section: "Toggles"
             ),

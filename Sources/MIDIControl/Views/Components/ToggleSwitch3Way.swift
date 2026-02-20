@@ -1,14 +1,12 @@
 import SwiftUI
 
 /// A horizontal bat-style toggle switch matching real metal guitar pedal toggles.
-/// Options are arranged left-to-right; the bat lever slides between positions.
-/// Labels appear above each slot.
+/// **Option B visual**: thin metal stem pivots from center hex nut; dome cap at tip.
+/// The stem leans ±28° left/right; straight up = center (3-way only).
 ///
 /// Interaction: DragGesture(minimumDistance: 0) on the outer VStack.
 /// - onEnded fires for any mouse-down + mouse-up (click or tiny drag).
 /// - startLocation.x in .local space maps directly to slot index via x / slotWidth.
-/// - .frame(width: trackWidth) constrains the VStack so the local coordinate
-///   space is exactly 0 … trackWidth, making the slot calculation reliable.
 struct ToggleSwitch3Way: View {
     let parameter: ParameterDefinition
     let options: [ToggleOption]
@@ -16,12 +14,9 @@ struct ToggleSwitch3Way: View {
     let onChange: (Int) -> Void
     let theme: PedalColorTheme
     var pedalId: String = ""
-    /// Optional tint color for the bat lever (e.g. red for Ch2, gold for Ch1)
+    /// Optional tint color for the dome cap (nil = chrome gradient)
     var batColor: Color? = nil
 
-    // liveIndex drives the bat position immediately on click via @State re-render.
-    // Without this, PedalState (a class) mutations don't propagate to viewModel's
-    // objectWillChange, so the parent view doesn't re-render and the bat stays frozen.
     @State private var liveIndex: Int = 0
 
     private func indexFromValue(_ val: Int) -> Int {
@@ -35,7 +30,7 @@ struct ToggleSwitch3Way: View {
     }
 
     private func select(index: Int) {
-        liveIndex = index                    // immediate visual update via @State
+        liveIndex = index
         let newValue = options[index].value
         value = newValue
         onChange(newValue)
@@ -104,17 +99,12 @@ struct ToggleSwitch3Way: View {
                 }
                 .frame(width: trackWidth)
 
-                // Hex mounting nut detail — visible at center of mechanism
+                // Hex mounting nut — the visible pivot point of the bat stem
                 HexNut(size: trackHeight - 2)
-                    .opacity(0.55)
+                    .opacity(0.70)
 
-                // ── Metal bat lever ──
+                // ── Metal bat lever (stem + dome cap) ──
                 batView
-                    .offset(x: batOffset)
-                    .animation(
-                        .interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
-                        value: liveIndex
-                    )
             }
             .frame(width: trackWidth, height: trackHeight)
 
@@ -126,15 +116,11 @@ struct ToggleSwitch3Way: View {
                 .minimumScaleFactor(0.6)
                 .frame(width: trackWidth)
         }
-        // Constrain width so .local coordinate space is exactly 0…trackWidth
         .frame(width: trackWidth)
         .contentShape(Rectangle())
-        // DragGesture(minimumDistance:0) fires on any mouse-down + mouse-up.
-        // onEnded gives startLocation in .local space → reliable slot calculation.
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .local)
                 .onEnded { gesture in
-                    // Ignore if the user actually dragged (not a tap)
                     guard abs(gesture.translation.width)  < 10,
                           abs(gesture.translation.height) < 10 else { return }
                     let idx = min(options.count - 1,
@@ -142,70 +128,82 @@ struct ToggleSwitch3Way: View {
                     select(index: idx)
                 }
         )
-        // Sync liveIndex from binding when value changes externally (e.g. preset load)
         .onAppear { liveIndex = indexFromValue(value) }
         .onChange(of: value) { liveIndex = indexFromValue(value) }
         .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 
-    // MARK: - Bat / Lever
+    // MARK: - Bat / Lever (Option B: Stem + Dome)
     //
-    // The bat simulates a real 3D toggle:
-    //   Center position → top-down view of the dome → circle
-    //   Left  position  → dome tilted left  → portrait oval rotated -22°
-    //   Right position  → dome tilted right → portrait oval rotated +22°
+    // A thin chrome stem extends upward from the hex nut pivot at housing center.
+    // A small flat dome cap sits at the tip — the "handle" end of the toggle.
+    // Left/Right: stem leans ±28° from vertical. Center (3-way): stem vertical.
+    // BatStem conforms to Animatable so tipX/tipY interpolate smoothly via spring.
 
     private var batView: some View {
-        // Center = circle viewed from straight above.
-        // Left/Right = bat tilts along its pivot axis — from above this looks like
-        // a vertical (portrait) oval that shifts horizontally toward the selected side.
-        // NO rotation: the oval stays upright (90°) at all times.
-        let isCenter  = options.count == 3 && liveIndex == 1
-        let batDiameter: CGFloat = trackHeight - 4
-
-        // Tilted bat: narrower width (we see less of the dome face),
-        // taller height (the rod length becomes apparent from above).
-        let ovalW: CGFloat = batDiameter * (isCenter ? 1.0 : 0.58)
-        let ovalH: CGFloat = batDiameter * (isCenter ? 1.0 : 1.55)
-
-        // Horizontal displacement: the top of the bat leans toward the selected side.
-        let xShift: CGFloat = {
-            let d: CGFloat = slotWidth * 0.22
-            if options.count == 2 { return liveIndex == 0 ? -d : d }
+        let angleDeg: Double = {
+            if options.count == 2 { return liveIndex == 0 ? -28.0 : 28.0 }
             switch liveIndex {
-            case 0:  return -d
-            case 2:  return  d
-            default: return  0
+            case 0:  return -28.0
+            case 2:  return  28.0
+            default: return   0.0
             }
         }()
 
-        // Fill — either the provided tint or default chrome
-        let fill = AnyShapeStyle(batFill(ovalH: ovalH))
+        let stemLen: CGFloat = 14
+        let rad  = angleDeg * .pi / 180
+        let tipX = CGFloat(sin(rad)) * stemLen    // ±6.6 at ±28°
+        let tipY = -CGFloat(cos(rad)) * stemLen   // −12.4 at tilt, −14 at center
+
+        let domeW: CGFloat = 10
+        let domeH: CGFloat =  7
 
         return ZStack {
-            // Drop shadow
-            Ellipse()
-                .fill(Color.black.opacity(0.50))
-                .frame(width: ovalW + 2, height: ovalH + 2)
-                .blur(radius: 1.5)
-                .offset(x: xShift, y: 1.5)
+            // Stem drop shadow
+            BatStem(tipX: tipX + 1.0, tipY: tipY + 1.5)
+                .stroke(Color.black.opacity(0.40),
+                        style: StrokeStyle(lineWidth: 4.5, lineCap: .round))
+                .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
+                           value: liveIndex)
 
-            // Bat body — portrait oval, shifted left/right (no rotation)
-            Ellipse()
-                .fill(fill)
-                .frame(width: ovalW, height: ovalH)
-                .offset(x: xShift)
+            // Chrome stem (gradient runs top-to-bottom of the frame)
+            BatStem(tipX: tipX, tipY: tipY)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color(white: 0.90), Color(white: 0.62)],
+                        startPoint: .top, endPoint: .bottom),
+                    style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
+                           value: liveIndex)
 
-            // Specular highlight near the top of the dome
+            // Dome shadow
             Ellipse()
-                .fill(Color.white.opacity(isCenter ? 0.72 : 0.55))
-                .frame(width: ovalW * 0.50, height: ovalW * 0.28)
-                .offset(x: xShift, y: -(ovalH * 0.26))
+                .fill(Color.black.opacity(0.40))
+                .frame(width: domeW + 2, height: domeH + 2)
+                .blur(radius: 1)
+                .offset(x: tipX + 1.0, y: tipY + 1.5)
+                .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
+                           value: liveIndex)
+
+            // Dome cap
+            Ellipse()
+                .fill(AnyShapeStyle(batDomeFill()))
+                .frame(width: domeW, height: domeH)
+                .offset(x: tipX, y: tipY)
+                .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
+                           value: liveIndex)
+
+            // Specular highlight on dome
+            Ellipse()
+                .fill(Color.white.opacity(0.65))
+                .frame(width: domeW * 0.45, height: domeH * 0.35)
+                .offset(x: tipX, y: tipY - domeH * 0.18)
+                .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14),
+                           value: liveIndex)
         }
-        .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14), value: liveIndex)
     }
 
-    private func batFill(ovalH: CGFloat) -> some ShapeStyle {
+    private func batDomeFill() -> some ShapeStyle {
         if let c = batColor {
             return AnyShapeStyle(LinearGradient(
                 stops: [
@@ -213,8 +211,7 @@ struct ToggleSwitch3Way: View {
                     .init(color: c.opacity(0.76), location: 0.50),
                     .init(color: c.opacity(0.54), location: 1.00),
                 ],
-                startPoint: .top, endPoint: .bottom
-            ))
+                startPoint: .top, endPoint: .bottom))
         }
         return AnyShapeStyle(LinearGradient(
             stops: [
@@ -222,20 +219,35 @@ struct ToggleSwitch3Way: View {
                 .init(color: Color(white: 0.78), location: 0.45),
                 .init(color: Color(white: 0.58), location: 1.00),
             ],
-            startPoint: .top, endPoint: .bottom
-        ))
+            startPoint: .top, endPoint: .bottom))
     }
 
     // MARK: - Dimensions
 
-    private var slotWidth:   CGFloat { 28 }
-    private var trackWidth:  CGFloat { slotWidth * CGFloat(options.count) }
+    private var slotWidth:  CGFloat { 28 }
+    private var trackWidth: CGFloat { slotWidth * CGFloat(options.count) }
     private var trackHeight: CGFloat { 22 }
+}
 
-    private var batOffset: CGFloat {
-        let trackCenter = trackWidth / 2
-        let slotCenter  = slotWidth * (CGFloat(liveIndex) + 0.5)
-        return slotCenter - trackCenter
+// MARK: - Bat Stem Shape
+
+/// Draws an animatable line from housing center (rect.mid) to the bat tip position.
+/// Conforms to Animatable so SwiftUI interpolates tipX/tipY during spring animations,
+/// producing a smooth arc sweep rather than a snap when liveIndex changes.
+private struct BatStem: Shape {
+    var tipX: CGFloat
+    var tipY: CGFloat
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(tipX, tipY) }
+        set { tipX = newValue.first; tipY = newValue.second }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.midX + tipX, y: rect.midY + tipY))
+        return p
     }
 }
 
@@ -244,7 +256,7 @@ struct ToggleSwitch3Way: View {
 /// Draws a hexagonal toggle-switch mounting nut using Canvas.
 /// Mimics the chrome hex nut visible on real guitar pedal toggle switches.
 private struct HexNut: View {
-    let size: CGFloat  // overall bounding box (square)
+    let size: CGFloat
 
     var body: some View {
         Canvas { ctx, size in
@@ -252,7 +264,6 @@ private struct HexNut: View {
             let cy = size.height / 2
             let r  = min(size.width, size.height) / 2 - 0.5
 
-            // Build hexagon path (flat-top orientation)
             var hex = Path()
             for i in 0..<6 {
                 let angle = Double(i) * (.pi / 3) + .pi / 6
@@ -262,7 +273,6 @@ private struct HexNut: View {
             }
             hex.closeSubpath()
 
-            // Chrome gradient fill
             ctx.fill(hex, with: .linearGradient(
                 Gradient(stops: [
                     .init(color: Color(white: 0.82), location: 0.00),
@@ -273,10 +283,8 @@ private struct HexNut: View {
                 endPoint:   CGPoint(x: cx + r, y: cy + r)
             ))
 
-            // Dark stroke for edge definition
             ctx.stroke(hex, with: .color(Color(white: 0.22)), lineWidth: 0.75)
 
-            // Inner circle (center bore hole)
             let boreR = r * 0.38
             var bore = Path()
             bore.addEllipse(in: CGRect(x: cx - boreR, y: cy - boreR,

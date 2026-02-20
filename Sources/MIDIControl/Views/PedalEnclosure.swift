@@ -32,12 +32,7 @@ struct PedalEnclosure: View {
         "tone1":   Color(red: 1.00, green: 0.76, blue: 0.20),
     ]
 
-    // Brothers AM toggle bat colors — gain2type = red/pink, rest = gold
-    private let brothersToggleBatColors: [String: Color] = [
-        "gain2type":   Color(red: 0.92, green: 0.28, blue: 0.40),
-        "gain1type":   Color(red: 1.00, green: 0.76, blue: 0.20),
-        "trebleboost": Color(red: 1.00, green: 0.76, blue: 0.20),
-    ]
+    // Brothers AM toggle bat colors — all chrome (nil = default chrome fill in ToggleSwitch3Way)
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -134,10 +129,8 @@ struct PedalEnclosure: View {
             ForEach(layout.toggleRow, id: \.self) { paramId in
                 if let param = viewModel.definition.parameter(byId: paramId),
                    case .toggle(let options) = param.type {
-                    let batCol: Color? = viewModel.definition.id == "brothers-am"
-                        ? brothersToggleBatColors[paramId]
-                        : nil
-                    ToggleSwitch3Way(
+                    let batCol: Color? = nil  // all bats chrome
+                    ToggleSwitch3WayRotating(
                         parameter: param,
                         options: options,
                         value: bindingForParam(param),
@@ -515,23 +508,15 @@ private struct AMBadge: View {
             StarburstShape(spikes: spikes, outerRadius: outerR, innerRadius: innerR)
                 .stroke(Color(red: 0.98, green: 0.80, blue: 0.15), lineWidth: 1.5)
 
-            // Sun body circle — slightly deeper gold
+            // Sun center circle — outline only, matches the stroked rays
             Circle()
-                .fill(RadialGradient(
-                    colors: [
-                        Color(red: 1.00, green: 0.90, blue: 0.40),
-                        Color(red: 0.95, green: 0.70, blue: 0.10),
-                    ],
-                    center: UnitPoint(x: 0.38, y: 0.32),
-                    startRadius: 0,
-                    endRadius: CGFloat(innerR)
-                ))
+                .strokeBorder(Color(red: 0.98, green: 0.80, blue: 0.15), lineWidth: 1.5)
                 .frame(width: innerR * 2, height: innerR * 2)
 
-            // "AM" text
+            // "AM" text — gold to stay visible against the hollow center
             Text("AM")
                 .font(.system(size: 10, weight: .black))
-                .foregroundStyle(Color(red: 0.22, green: 0.05, blue: 0.20))
+                .foregroundStyle(Color(red: 0.98, green: 0.80, blue: 0.15))
         }
         .frame(width: outerR * 2 + 4, height: outerR * 2 + 4)
     }

@@ -86,9 +86,9 @@ extension PedalDefinition {
             ParameterDefinition(
                 id: "micro_looper", name: "Micro-Looper", cc: 23,
                 type: .toggle(options: [
-                    ToggleOption(name: "Stretch", value: 0),
-                    ToggleOption(name: "Tape", value: 64),
-                    ToggleOption(name: "Grain", value: 127),
+                    ToggleOption(name: "ENV",     value: 0),
+                    ToggleOption(name: "Tape",    value: 64),
+                    ToggleOption(name: "Stretch", value: 127),
                 ]),
                 section: "Toggles"
             ),

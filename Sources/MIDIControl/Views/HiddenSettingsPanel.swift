@@ -47,10 +47,6 @@ struct HiddenSettingsPanel: View {
                 }
             }
             .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(nsColor: .windowBackgroundColor).opacity(0.5))
-            )
         }
     }
 

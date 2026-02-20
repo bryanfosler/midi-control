@@ -488,59 +488,114 @@ For each 1/4" TRS jack:
                   └─────┘
 ```
 
-### Enclosure Layout
+### Enclosure Layout — Option B
+
+TRS output cables exit the long side face. MIDI cables connect at the short end.
+Switches sit on top for set-and-forget Ring/Tip configuration per output.
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                                                        │
-│  MIDI IN            CONFIG SWITCHES                    │
-│   ┌───┐            ┌──┐ ┌──┐ ┌──┐ ┌──┐                │
-│   │DIN│            │◀■│ │◀■│ │ ■▶│ │ ■▶│               │
-│   └───┘            └──┘ └──┘ └──┘ └──┘                │
-│                     1    2    3    4                   │
-│                                                        │
-│   OUT 1      OUT 2      OUT 3      OUT 4              │
-│   ┌───┐      ┌───┐      ┌───┐      ┌───┐             │
-│   │TRS│      │TRS│      │TRS│      │TRS│             │
-│   └───┘      └───┘      └───┘      └───┘             │
-│                                                        │
-│   ◀ LEFT = RING (Chase Bliss)                         │
-│   RIGHT ▶ = TIP (Strymon / Meris / Empress)           │
-└────────────────────────────────────────────────────────┘
+SHORT SIDE A (60mm × 31mm) — MIDI Connections
+┌──────────────────────────────────┐
+│                                  │
+│       ◎              ◎          │
+│     DIN IN         DIN THRU      │
+│                                  │
+└──────────────────────────────────┘
+
+LONG SIDE (112mm × 31mm) — TRS Outputs
+┌──────────────────────────────────────────────────────┐
+│                                                      │
+│    ○           ○           ○           ○            │
+│   TRS 1       TRS 2       TRS 3       TRS 4         │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+TOP FACE (112mm × 60mm) — Config Switches
+┌──────────────────────────────────────────────────────┐
+│                                                      │
+│                                                      │
+│   [SW1]      [SW2]      [SW3]      [SW4]            │
+│    1          2          3          4               │
+│                                                      │
+│   ◀ LEFT = RING Active (Chase Bliss)                │
+│     RIGHT ▶ = TIP Active (Strymon / Meris)          │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+SHORT SIDE B — blank (reserved for power jack if added later)
 ```
 
 ### 1590B Drilling & Wire Reference
 
-#### Drilling Template — Top Face
+#### Drilling Templates — Three Faces
+
+Three faces require drilling. Use a center punch before every hole.
+
+---
+
+**FACE 1 — Short Side A (60mm × 31mm): MIDI Connectors**
 
 ```
-HAMMOND 1590B  (~4.4" × 2.3" top face)
-◄─────────────────── 4.4" ──────────────────►
+◄──────────── 60mm ─────────────►
+┌────────────────────────────────┐  ▲
+│                                │  │
+│      ◎              ◎         │  31mm
+│    5/8"            5/8"        │  │
+│   DIN IN         DIN THRU      │  ▼
+└────────────────────────────────┘
+    18mm              42mm
+    (all holes centered vertically at 15mm from bottom)
+```
 
+---
+
+**FACE 2 — Long Side (112mm × 31mm): TRS Outputs**
+
+```
+◄─────────────────── 112mm ──────────────────────►
 ┌──────────────────────────────────────────────────┐  ▲
 │                                                  │  │
-│  (●)      [ ]      [ ]      [ ]      [ ]         │  │
-│  5/8"    SLOT     SLOT     SLOT     SLOT          │  │
-│   DIN    SW 1     SW 2     SW 3     SW 4          │ 2.3"
-│                                                  │  │
-│   ●         ●        ●        ●        ●          │  │
-│  3/8"     3/8"     3/8"     3/8"     3/8"         │  │
-│  TRS 1    TRS 2    TRS 3    TRS 4                 │  ▼
+│    ●         ●         ●         ●               │  31mm
+│   3/8"      3/8"      3/8"      3/8"             │  │
+│   TRS 1    TRS 2    TRS 3    TRS 4               │  ▼
 └──────────────────────────────────────────────────┘
+   16mm       38mm      60mm      82mm
+   (all holes centered vertically at 15mm from bottom)
+```
+
+---
+
+**FACE 3 — Top Face (112mm × 60mm): Config Switches**
+
+```
+◄─────────────────── 112mm ──────────────────────►
+┌──────────────────────────────────────────────────┐  ▲
+│                                                  │  │
+│                                                  │  │
+│   [ ]       [ ]       [ ]       [ ]              │  60mm
+│   SW 1     SW 2     SW 3     SW 4               │  │
+│                                                  │  │
+│                                                  │  ▼
+└──────────────────────────────────────────────────┘
+  16mm        38mm       60mm       82mm
+  (switches centered at 30mm from either long edge)
+  (x positions aligned above TRS jacks on long side)
+```
 
   ●  = Round hole (step bit)
+  ◎  = Round hole, larger (step bit — 5/8")
   [ ] = Slot for switch knob (~3mm × 8mm — drill + file, or Dremel)
-```
 
 > Tip: Use a center punch on each mark before drilling to keep the bit from skating on the aluminum.
 
 #### Hole Sizes
 
-| Component | Hole Size | Qty |
-|-----------|-----------|-----|
-| 5-pin DIN jack | **5/8" (16mm)** | 1 |
-| 1/4" TRS jack | **3/8" (9.5mm)** | 4 |
-| Slide switch slot | **~3mm × 8mm slot** | 4 |
+| Component | Hole Size | Qty | Face |
+|-----------|-----------|-----|------|
+| 5-pin DIN IN jack | **5/8" (16mm)** | 1 | Short Side A |
+| 5-pin DIN THRU jack | **5/8" (16mm)** | 1 | Short Side A |
+| 1/4" TRS jack | **3/8" (9.5mm)** | 4 | Long Side |
+| Slide switch slot | **~3mm × 8mm slot** | 4 | Top Face |
 
 ---
 
@@ -550,11 +605,11 @@ Cut all wires before soldering. Strip 1/4" (~6mm) off each end.
 
 | # | Color | Length | From | To |
 |---|-------|--------|------|----|
-| 1 | **Black** | 5" | DIN Pin 2 | TRS 1 Sleeve |
+| 1 | **Black** | 5" | DIN IN Pin 2 | TRS 1 Sleeve |
 | 2 | **Black** | 3" | TRS 1 Sleeve | TRS 2 Sleeve |
 | 3 | **Black** | 3" | TRS 2 Sleeve | TRS 3 Sleeve |
 | 4 | **Black** | 3" | TRS 3 Sleeve | TRS 4 Sleeve |
-| 5 | **Red** | 5" | DIN Pin 5 | SW 1 Common (C) |
+| 5 | **Red** | 5" | DIN IN Pin 5 | SW 1 Common (C) |
 | 6 | **Red** | 2" | SW 1 Common | SW 2 Common |
 | 7 | **Red** | 2" | SW 2 Common | SW 3 Common |
 | 8 | **Red** | 2" | SW 3 Common | SW 4 Common |
@@ -566,8 +621,10 @@ Cut all wires before soldering. Strip 1/4" (~6mm) off each end.
 | 14 | **Yellow** | 3" | SW 2 Pin 2 | TRS 2 Tip |
 | 15 | **Yellow** | 3" | SW 3 Pin 2 | TRS 3 Tip |
 | 16 | **Yellow** | 3" | SW 4 Pin 2 | TRS 4 Tip |
+| 17 | **Red** | 2" | DIN IN Pin 5 | DIN THRU Pin 5 |
+| 18 | **Black** | 2" | DIN IN Pin 2 | DIN THRU Pin 2 |
 
-**Total: 16 wires.** Cut a couple extra 3" blacks in case you need slack on the ground bus.
+**Total: 18 wires.** Wires 17–18 are the passive MIDI Thru tap — no additional components needed. Cut a couple extra 3" blacks in case you need slack on the ground bus.
 
 #### Color Legend
 
@@ -617,10 +674,10 @@ TRS JACK (rear, 3 solder lugs)
 ### Build Steps
 
 **1. Prepare the Enclosure**
-- Mark and drill holes for: 1x DIN jack, 4x TRS jacks, 4x switch slots
-- DIN jack: typically 15-16mm (5/8") hole
-- 1/4" TRS jack: typically 9.5mm (3/8") hole
-- Switches: small rectangular slots or holes for knobs to poke through
+- Drill **Short Side A**: 2x DIN jacks (IN + THRU) — 5/8" (16mm) holes at 18mm and 42mm, centered vertically
+- Drill **Long Side**: 4x TRS jacks — 3/8" (9.5mm) holes at 16mm, 38mm, 60mm, 82mm, centered vertically
+- Drill **Top Face**: 4x switch slots — ~3mm × 8mm slots at 16mm, 38mm, 60mm, 82mm, centered at 30mm from either long edge
+- Use a center punch before every hole to prevent bit wander on the aluminum
 
 **2. Test Switches on Breadboard First**
 - The SPDT switches have 2.54mm pin pitch — they fit breadboards
