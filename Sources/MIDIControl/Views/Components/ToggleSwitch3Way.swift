@@ -16,6 +16,8 @@ struct ToggleSwitch3Way: View {
     let onChange: (Int) -> Void
     let theme: PedalColorTheme
     var pedalId: String = ""
+    /// Optional tint color for the bat lever (e.g. red for Ch2, gold for Ch1)
+    var batColor: Color? = nil
 
     // liveIndex drives the bat position immediately on click via @State re-render.
     // Without this, PedalState (a class) mutations don't propagate to viewModel's
@@ -143,40 +145,76 @@ struct ToggleSwitch3Way: View {
     }
 
     // MARK: - Bat / Lever
+    //
+    // The bat simulates a real 3D toggle:
+    //   Center position → top-down view of the dome → circle
+    //   Left  position  → dome tilted left  → portrait oval rotated -22°
+    //   Right position  → dome tilted right → portrait oval rotated +22°
 
     private var batView: some View {
-        ZStack {
-            // Bat drop shadow
-            RoundedRectangle(cornerRadius: 3.5)
-                .fill(Color.black.opacity(0.45))
-                .frame(width: batWidth + 2, height: batHeight + 2)
+        // Center = circle; left/right = portrait oval + rotation
+        let isCenter  = options.count == 3 && liveIndex == 1
+        let batDiameter: CGFloat = trackHeight - 4        // base dimension (14 pt)
+        let ovalW: CGFloat = batDiameter * (isCenter ? 1.0 : 0.80)   // 14 or ~11 pt
+        let ovalH: CGFloat = batDiameter * (isCenter ? 1.0 : 1.35)   // 14 or ~19 pt
+
+        // Rotation: left=-22°, center=0°, right=+22°
+        let rot: Double = {
+            if options.count == 2 { return liveIndex == 0 ? -22 : 22 }
+            switch liveIndex {
+            case 0:  return -22
+            case 2:  return  22
+            default: return   0
+            }
+        }()
+
+        // Fill — either the provided tint or default chrome
+        let fill = AnyShapeStyle(batFill(ovalH: ovalH))
+
+        return ZStack {
+            // Drop shadow
+            Ellipse()
+                .fill(Color.black.opacity(0.50))
+                .frame(width: ovalW + 2, height: ovalH + 2)
                 .blur(radius: 1.5)
-                .offset(y: 1)
+                .offset(y: 1.5)
+                .rotationEffect(.degrees(rot))
 
-            // Bat body — chrome metallic gradient
-            RoundedRectangle(cornerRadius: 3.5)
-                .fill(LinearGradient(
-                    stops: [
-                        .init(color: Color(white: 0.93), location: 0.0),
-                        .init(color: Color(white: 0.78), location: 0.40),
-                        .init(color: Color(white: 0.60), location: 1.0),
-                    ],
-                    startPoint: .top, endPoint: .bottom
-                ))
-                .frame(width: batWidth, height: batHeight)
+            // Bat body
+            Ellipse()
+                .fill(fill)
+                .frame(width: ovalW, height: ovalH)
+                .rotationEffect(.degrees(rot))
 
-            // Top specular highlight strip
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color.white.opacity(0.68))
-                .frame(width: batWidth * 0.50, height: 2)
-                .offset(y: -(batHeight * 0.35))
-
-            // Side sheen line
-            Rectangle()
-                .fill(Color.white.opacity(0.22))
-                .frame(width: 1, height: batHeight * 0.55)
-                .offset(x: -(batWidth * 0.28))
+            // Specular highlight — small oval near the dome tip
+            Ellipse()
+                .fill(Color.white.opacity(isCenter ? 0.72 : 0.55))
+                .frame(width: ovalW * 0.48, height: ovalW * 0.30)
+                .offset(y: -(ovalH * 0.28))
+                .rotationEffect(.degrees(rot))
         }
+        .animation(.interpolatingSpring(mass: 0.25, stiffness: 220, damping: 14), value: liveIndex)
+    }
+
+    private func batFill(ovalH: CGFloat) -> some ShapeStyle {
+        if let c = batColor {
+            return AnyShapeStyle(LinearGradient(
+                stops: [
+                    .init(color: c.opacity(0.98), location: 0.00),
+                    .init(color: c.opacity(0.76), location: 0.50),
+                    .init(color: c.opacity(0.54), location: 1.00),
+                ],
+                startPoint: .top, endPoint: .bottom
+            ))
+        }
+        return AnyShapeStyle(LinearGradient(
+            stops: [
+                .init(color: Color(white: 0.94), location: 0.00),
+                .init(color: Color(white: 0.78), location: 0.45),
+                .init(color: Color(white: 0.58), location: 1.00),
+            ],
+            startPoint: .top, endPoint: .bottom
+        ))
     }
 
     // MARK: - Dimensions
@@ -184,8 +222,6 @@ struct ToggleSwitch3Way: View {
     private var slotWidth:   CGFloat { 26 }
     private var trackWidth:  CGFloat { slotWidth * CGFloat(options.count) }
     private var trackHeight: CGFloat { 18 }
-    private var batWidth:    CGFloat { slotWidth - 5 }
-    private var batHeight:   CGFloat { trackHeight - 3 }
 
     private var batOffset: CGFloat {
         let trackCenter = trackWidth / 2

@@ -56,9 +56,9 @@ extension PedalDefinition {
             ParameterDefinition(
                 id: "trebleboost", name: "Treble Boost", cc: 22,
                 type: .toggle(options: [
-                    ToggleOption(name: "Full Sun",  value: 0),
-                    ToggleOption(name: "Off",       value: 2),
-                    ToggleOption(name: "Half Sun",  value: 3),
+                    ToggleOption(name: "☀",  value: 0),
+                    ToggleOption(name: "Off", value: 2),
+                    ToggleOption(name: "◑",  value: 3),
                 ]),
                 section: "Toggles"
             ),

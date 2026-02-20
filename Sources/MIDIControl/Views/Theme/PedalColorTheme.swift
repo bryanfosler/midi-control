@@ -18,11 +18,11 @@ struct PedalColorTheme {
     // Deep purple body, white outer border, warm indicator lines
     static let moodMKII = PedalColorTheme(
         backgroundGradient: [
-            Color(red: 0.30, green: 0.10, blue: 0.48),  // deep violet
-            Color(red: 0.26, green: 0.08, blue: 0.42),  // slightly darker at bottom
+            Color(red: 0.34, green: 0.07, blue: 0.20),  // warm maroon/burgundy
+            Color(red: 0.27, green: 0.05, blue: 0.15),  // slightly darker at bottom
         ],
-        labelColor: .white,
-        knobColor: Color(red: 0.22, green: 0.07, blue: 0.34),  // very dark purple
+        labelColor: Color(red: 0.96, green: 0.78, blue: 0.35),  // warm amber — matches iOS reference
+        knobColor: Color(red: 0.18, green: 0.04, blue: 0.10),   // very dark maroon (darker than body)
         knobIndicatorColor: Color(red: 1.0, green: 0.55, blue: 0.22),  // warm amber
         switchColor: Color(white: 0.35),
         dipOnColor: Color(red: 0.95, green: 0.65, blue: 0.25),

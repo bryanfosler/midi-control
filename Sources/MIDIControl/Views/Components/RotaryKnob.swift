@@ -60,38 +60,39 @@ struct RotaryKnob: View {
     @ViewBuilder
     private var knobBody: some View {
         ZStack {
-            // ── Ring track (full 270° arc) ──
+            // ── Ring track (full 270° arc — subtle range guide) ──
             ArcShape(startAngle: minAngle, endAngle: maxAngle)
-                .stroke(Color.white.opacity(0.07), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                .frame(width: 54, height: 54)
+                .stroke(Color.white.opacity(0.10), style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
+                .frame(width: 58, height: 58)
 
             // ── Active arc (min → current value) ──
             ArcShape(startAngle: minAngle, endAngle: rotation)
-                .stroke(theme.dipOnColor, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                .frame(width: 54, height: 54)
+                .stroke(overrideIndicatorColor ?? theme.dipOnColor,
+                        style: StrokeStyle(lineWidth: 3.0, lineCap: .round))
+                .frame(width: 58, height: 58)
 
             // ── Knob cast shadow ──
             Circle()
-                .fill(Color.black.opacity(0.5))
-                .frame(width: 42, height: 42)
-                .blur(radius: 3)
-                .offset(y: 2.5)
+                .fill(Color.black.opacity(0.55))
+                .frame(width: 48, height: 48)
+                .blur(radius: 4)
+                .offset(y: 3)
 
             // ── Outer bevel ring ──
             Circle()
                 .fill(LinearGradient(
-                    colors: [Color(white: 0.42), Color(white: 0.18)],
+                    colors: [Color(white: 0.40), Color(white: 0.16)],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
-                .frame(width: 42, height: 42)
+                .frame(width: 48, height: 48)
 
             // ── Grip tick marks (10 marks, 270° span) ──
             ForEach(0..<10, id: \.self) { i in
                 let angle = -135.0 + Double(i) * (270.0 / 9.0)
                 Capsule()
-                    .fill(Color.white.opacity(0.20))
+                    .fill(Color.white.opacity(0.18))
                     .frame(width: 1.5, height: 5)
-                    .offset(y: -17)
+                    .offset(y: -21)
                     .rotationEffect(.degrees(angle))
             }
 
@@ -99,30 +100,30 @@ struct RotaryKnob: View {
             Circle()
                 .fill(RadialGradient(
                     colors: [
-                        Color.white.opacity(0.30),
+                        Color.white.opacity(0.28),
                         theme.knobColor,
-                        theme.knobColor.opacity(0.75),
+                        theme.knobColor.opacity(0.80),
                     ],
                     center: UnitPoint(x: 0.34, y: 0.30),
-                    startRadius: 0, endRadius: 19
+                    startRadius: 0, endRadius: 22
                 ))
-                .frame(width: 37, height: 37)
+                .frame(width: 43, height: 43)
 
             // ── Specular highlight ──
             Ellipse()
-                .fill(Color.white.opacity(0.18))
-                .frame(width: 13, height: 9)
-                .offset(x: -8, y: -10)
+                .fill(Color.white.opacity(0.20))
+                .frame(width: 15, height: 10)
+                .offset(x: -9, y: -12)
                 .blur(radius: 2.5)
 
             // ── Indicator line ──
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(overrideIndicatorColor ?? theme.knobIndicatorColor)
-                .frame(width: 2.5, height: 10)
-                .offset(y: -13)
+                .frame(width: 3, height: 12)
+                .offset(y: -16)
                 .rotationEffect(.degrees(rotation))
         }
-        .frame(width: 58, height: 58)
+        .frame(width: 62, height: 62)
         // Scroll wheel captured via NSView background (doesn't block SwiftUI gestures)
         .background(
             ScrollWheelCapture { delta in

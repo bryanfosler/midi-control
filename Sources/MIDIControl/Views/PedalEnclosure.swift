@@ -22,6 +22,23 @@ struct PedalEnclosure: View {
         "modify_loop": Color(red: 1.00, green: 0.78, blue: 0.25),
     ]
 
+    // Brothers AM knob indicator colors — Ch2 (gain2/vol2/tone2) = red/pink, Ch1 = gold
+    private let brothersIndicatorColors: [String: Color] = [
+        "gain2":   Color(red: 0.95, green: 0.30, blue: 0.42),
+        "volume2": Color(red: 0.95, green: 0.30, blue: 0.42),
+        "tone2":   Color(red: 0.95, green: 0.30, blue: 0.42),
+        "gain1":   Color(red: 1.00, green: 0.76, blue: 0.20),
+        "volume1": Color(red: 1.00, green: 0.76, blue: 0.20),
+        "tone1":   Color(red: 1.00, green: 0.76, blue: 0.20),
+    ]
+
+    // Brothers AM toggle bat colors — gain2type = red/pink, rest = gold
+    private let brothersToggleBatColors: [String: Color] = [
+        "gain2type":   Color(red: 0.92, green: 0.28, blue: 0.40),
+        "gain1type":   Color(red: 1.00, green: 0.76, blue: 0.20),
+        "trebleboost": Color(red: 1.00, green: 0.76, blue: 0.20),
+    ]
+
     var body: some View {
         ZStack(alignment: .top) {
             EnclosureShell(theme: theme)
@@ -86,9 +103,13 @@ struct PedalEnclosure: View {
                     Spacer(minLength: 0)
                     ForEach(layout.knobRows[rowIndex], id: \.self) { paramId in
                         if let param = viewModel.definition.parameter(byId: paramId) {
-                            let indicatorColor: Color? = viewModel.definition.id == "mood-mkii"
-                                ? moodIndicatorColors[paramId]
-                                : nil
+                            let indicatorColor: Color? = {
+                                switch viewModel.definition.id {
+                                case "mood-mkii":   return moodIndicatorColors[paramId]
+                                case "brothers-am": return brothersIndicatorColors[paramId]
+                                default:            return nil
+                                }
+                            }()
                             RotaryKnob(
                                 parameter: param,
                                 value: bindingForParam(param),
@@ -113,13 +134,17 @@ struct PedalEnclosure: View {
             ForEach(layout.toggleRow, id: \.self) { paramId in
                 if let param = viewModel.definition.parameter(byId: paramId),
                    case .toggle(let options) = param.type {
+                    let batCol: Color? = viewModel.definition.id == "brothers-am"
+                        ? brothersToggleBatColors[paramId]
+                        : nil
                     ToggleSwitch3Way(
                         parameter: param,
                         options: options,
                         value: bindingForParam(param),
                         onChange: { val in viewModel.setValue(val, for: param) },
                         theme: theme,
-                        pedalId: viewModel.definition.id
+                        pedalId: viewModel.definition.id,
+                        batColor: batCol
                     )
                     Spacer()
                 }
@@ -277,39 +302,36 @@ struct PedalEnclosure: View {
 
     // MARK: - Shared Sub-views
 
-    /// Three mini LED housings matching the physical pedal row
+    /// Three LED housings evenly spaced — one above each bottom element
+    /// (left footswitch, center logo/toggle, right footswitch)
     private var ledDotRow: some View {
-        HStack(spacing: 18) {
-            ForEach(0..<3, id: \.self) { _ in
-                ZStack {
-                    Circle()
-                        .fill(Color.black.opacity(0.70))
-                        .frame(width: 9, height: 9)
-                    Circle()
-                        .strokeBorder(Color(white: 0.28), lineWidth: 0.5)
-                        .frame(width: 9, height: 9)
-                }
-            }
+        HStack(spacing: 0) {
+            Spacer()
+            ledDot
+            Spacer()
+            ledDot
+            Spacer()
+            ledDot
+            Spacer()
         }
     }
 
-    /// Chase Bliss logo — stylized "K" with descending arrow
-    private var cbLogo: some View {
-        VStack(spacing: 3) {
-            // Small center button (rubber stomp)
-            ZStack {
-                Circle()
-                    .fill(Color.black.opacity(0.75))
-                    .frame(width: 14, height: 14)
-                Circle()
-                    .strokeBorder(Color(white: 0.30), lineWidth: 0.5)
-                    .frame(width: 14, height: 14)
-            }
-            // K logo text approximation
-            Text("K")
-                .font(.system(size: 13, weight: .black, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.28))
+    private var ledDot: some View {
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.70))
+                .frame(width: 9, height: 9)
+            Circle()
+                .strokeBorder(Color(white: 0.28), lineWidth: 0.5)
+                .frame(width: 9, height: 9)
         }
+    }
+
+    /// Chase Bliss logo — standing figure silhouette (their brand mark)
+    private var cbLogo: some View {
+        Image(systemName: "figure.stand")
+            .font(.system(size: 18, weight: .regular))
+            .foregroundStyle(Color.white.opacity(0.30))
     }
 
     // MARK: - Helpers
@@ -397,120 +419,128 @@ private struct ScrewHead: View {
 }
 
 // MARK: - MOOD Brand Section
-// Horizontal warm color bands (gold → orange → deep red) with large "MOOD MKii" text
-// and a white rising-sun half-circle — matches the CB Presets app render
+// Sunset color bands (bright gold → orange → deep red) fill the section.
+// "MOOD" is large, centered, bold italic — its gradient is BRIGHTER than the bands
+// behind it so the text pops. White rising-sun half-circle anchors the bottom.
 
 private struct MoodBrand: View {
     var body: some View {
         ZStack {
-            // ── Color bands (full width) ──
+            // ── Sunset bands (full width background) ──
             VStack(spacing: 0) {
-                // Gold top band
-                Color(red: 0.97, green: 0.82, blue: 0.30)
-                    .frame(height: 10)
-                // Orange mid band
-                Color(red: 0.92, green: 0.50, blue: 0.14)
-                    .frame(height: 14)
-                // Deep red lower band
-                Color(red: 0.72, green: 0.16, blue: 0.12)
-                    .frame(height: 12)
-                // Fades into body — very dark red
-                Color(red: 0.40, green: 0.08, blue: 0.08)
-                    .frame(height: 8)
+                Color(red: 0.98, green: 0.85, blue: 0.28).frame(height: 14) // bright gold
+                Color(red: 0.96, green: 0.54, blue: 0.14).frame(height: 18) // vivid orange
+                Color(red: 0.76, green: 0.18, blue: 0.12).frame(height: 16) // deep red
+                Color(red: 0.40, green: 0.08, blue: 0.08).frame(height: 8)  // dark base
             }
 
-            // ── White half-circle (rising sun, sits at bottom center) ──
+            // ── White rising-sun half-circle at bottom center ──
             Circle()
-                .fill(Color.white.opacity(0.88))
-                .frame(width: 38, height: 38)
-                .offset(y: 20)   // push bottom half below the brand section
+                .fill(Color.white.opacity(0.92))
+                .frame(width: 44, height: 44)
+                .offset(y: 26)
                 .clipped()
 
-            // ── "MOOD" text ──
-            HStack(alignment: .center) {
-                Text("MOOD")
-                    .font(.system(size: 44, weight: .black))
-                    .italic()
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.95, green: 0.80, blue: 0.25),
-                                Color(red: 0.88, green: 0.42, blue: 0.10),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+            // ── "MOOD" — large, centered, vivid gradient (brighter than the bands) ──
+            Text("MOOD")
+                .font(.system(size: 52, weight: .black))
+                .italic()
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.00, green: 0.98, blue: 0.68), // very bright gold (top)
+                            Color(red: 1.00, green: 0.78, blue: 0.28), // vivid amber
+                            Color(red: 0.98, green: 0.46, blue: 0.18), // vivid orange-red (bottom)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
-                    .shadow(color: .black.opacity(0.55), radius: 2, y: 1)
-                    .padding(.leading, 14)
+                )
+                .shadow(color: .black.opacity(0.60), radius: 3, y: 1)
+                .frame(maxWidth: .infinity, alignment: .center)
 
+            // ── "MKii" — small, bottom-right corner ──
+            VStack {
                 Spacer()
-
-                // "MKii" in upper-right
-                VStack {
-                    Text("MKii")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.95, green: 0.80, blue: 0.28))
-                        .shadow(color: .black.opacity(0.40), radius: 1)
+                HStack {
                     Spacer()
+                    Text("MKii")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Color(red: 1.0, green: 0.92, blue: 0.52).opacity(0.88))
+                        .shadow(color: .black.opacity(0.50), radius: 1)
+                        .padding(.trailing, 10)
+                        .padding(.bottom, 5)
                 }
-                .padding(.trailing, 14)
-                .padding(.top, 4)
             }
         }
-        .frame(height: 54)
+        .frame(height: 64)
         .clipped()
     }
 }
 
 // MARK: - Brothers Brand Section
-// Deep purple body, large white "Brothers" serif + prominent gold AM starburst badge
+// Deep purple body, large white "Brothers" serif + Analog Man sun badge (AM)
 
 private struct BrothersBrand: View {
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Spacer(minLength: 12)
+        HStack(alignment: .center, spacing: 6) {
+            Spacer(minLength: 8)
 
-            // "Brothers" — large white bold/italic
+            // "Brothers" — large white bold italic serif
             Text("Brothers")
-                .font(.system(size: 30, weight: .black, design: .serif))
+                .font(.system(size: 32, weight: .black, design: .serif))
                 .italic()
                 .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.50), radius: 3, y: 2)
+                .shadow(color: .black.opacity(0.55), radius: 3, y: 2)
 
-            // "AM" starburst badge
+            // Analog Man sun badge
             AMBadge()
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
         }
-        .frame(height: 60)
+        .frame(height: 66)
     }
 }
 
-/// Gold spiky starburst badge with "AM" text — matches the Chase Bliss Brothers AM branding
+/// Analog Man sun badge — 12 pronounced rays, vivid gold, "AM" in the center circle.
+/// Analog Man's logo is a classic sun, so we use fewer, more triangular rays than the
+/// previous 20-spike version to better match the real badge shape.
 private struct AMBadge: View {
-    private let spikes = 20
-    private let outerR: CGFloat = 18
-    private let innerR: CGFloat = 13
+    private let spikes = 12
+    private let outerR: CGFloat = 22
+    private let innerR: CGFloat = 14
 
     var body: some View {
         ZStack {
-            // Spiky starburst shape
+            // Sun ray shape — drop shadow first
             StarburstShape(spikes: spikes, outerRadius: outerR, innerRadius: innerR)
-                .fill(Color(red: 0.96, green: 0.74, blue: 0.18))
-                .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                .fill(Color.black.opacity(0.30))
+                .blur(radius: 2)
+                .offset(y: 1)
 
-            // Inner circle
+            // Sun rays — vivid gold
+            StarburstShape(spikes: spikes, outerRadius: outerR, innerRadius: innerR)
+                .fill(Color(red: 0.98, green: 0.80, blue: 0.15))
+
+            // Sun body circle — slightly deeper gold
             Circle()
-                .fill(Color(red: 0.92, green: 0.66, blue: 0.12))
-                .frame(width: innerR * 2 - 2, height: innerR * 2 - 2)
+                .fill(RadialGradient(
+                    colors: [
+                        Color(red: 1.00, green: 0.90, blue: 0.40),
+                        Color(red: 0.95, green: 0.70, blue: 0.10),
+                    ],
+                    center: UnitPoint(x: 0.38, y: 0.32),
+                    startRadius: 0,
+                    endRadius: CGFloat(innerR)
+                ))
+                .frame(width: innerR * 2, height: innerR * 2)
 
             // "AM" text
             Text("AM")
-                .font(.system(size: 8, weight: .black))
+                .font(.system(size: 10, weight: .black))
                 .foregroundStyle(Color(red: 0.22, green: 0.05, blue: 0.20))
         }
-        .frame(width: outerR * 2 + 2, height: outerR * 2 + 2)
+        .frame(width: outerR * 2 + 4, height: outerR * 2 + 4)
     }
 }
 
