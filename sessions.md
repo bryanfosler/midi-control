@@ -339,6 +339,38 @@
 - Housing box removed from toggles: real pedal aesthetic — levers mount through holes in the face, no external box
 - Always use `MIDIControl.xcodeproj` to run app; `Package.swift` builds CLI-only target
 
+---
+
+## Session 12 — Hardware Planning: Option B Enclosure Layout + MIDI Thru
+
+**Date:** 02.20.2026
+**Time spent:** ~45m
+
+### What We Built
+- Worked through 4 enclosure layout options for the 1590B MIDI-to-TRS converter box
+- Selected **Option B**: TRS jacks on long side, both DIN connectors on short side A, SPDT switches on top face
+- Confirmed **MIDI Thru is passive** (no power required) — just taps DIN IN pins 5 and 2 to a second DIN connector, 2 extra wires
+- Updated `midi-controller-complete-guide-v2.md` with:
+  - New 3-face enclosure layout diagram
+  - 3 separate drilling templates (one per face) with exact hole positions and dimensions
+  - Updated Hole Sizes table with Face column and DIN THRU row
+  - Wire cut sheet expanded to 18 wires (added wires 17–18 for MIDI Thru)
+  - Build Step 1 updated to reference all 3 faces
+- Installed Sublime Text (moved from Downloads → /Applications) and set as default for .md files
+
+### What Shipped
+- Updated `midi-controller-complete-guide-v2.md` committed (was already in HEAD)
+- GitHub issue #17 created, time logged (45m), closed → Notion sync triggered
+
+### Decisions Made
+- Option B layout: cables exit the long side (best for pedalboard routing), MIDI cables at short end
+- MIDI Thru is passive — confirmed no power needed, 2 wires tap from DIN IN
+- SPDT switches stay on top face for set-and-forget Ring/Tip config (visible from above)
+- Short Side B left blank — reserved for power jack if ever added later
+- Switch slots aligned at same x-positions as TRS jacks (16mm, 38mm, 60mm, 82mm) for visual correspondence
+
+---
+
 *To add a new session: copy the session template below and fill in details.*
 
 ```markdown
