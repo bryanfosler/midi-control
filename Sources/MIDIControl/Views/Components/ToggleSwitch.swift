@@ -6,6 +6,7 @@ struct ToggleSwitch: View {
     let options: [ToggleOption]
     @Binding var value: Int
     let onChange: (Int) -> Void
+    var pedalId: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -31,5 +32,6 @@ struct ToggleSwitch: View {
             }
             .pickerStyle(.segmented)
         }
+        .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 }

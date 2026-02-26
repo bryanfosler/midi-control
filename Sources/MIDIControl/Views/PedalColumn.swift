@@ -9,6 +9,11 @@ struct PedalColumn: View {
 
     @State private var showingChannelSheet = false
     @State private var targetChannel: Int  = 2   // selection inside the sheet
+    @State private var resetHoldProgress: CGFloat = 0
+    @State private var resetHoldTimer: Timer? = nil
+    @State private var resetHoldStart: Date? = nil
+    @State private var showingResetAlert = false
+    private let resetHoldDuration: TimeInterval = 2.0
 
     var body: some View {
         HSplitView {
@@ -19,6 +24,9 @@ struct PedalColumn: View {
                     DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
                     PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme)
                     HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
+                    if viewModel.definition.id == "mood-mkii" {
+                        MiniKeyboardView(viewModel: viewModel)
+                    }
                 }
                 .padding()
             }
@@ -69,10 +77,89 @@ struct PedalColumn: View {
 
             Spacer()
 
+            resetHoldButton
+
             Button("Send All") {
                 viewModel.sendAll()
             }
             .help("Re-send all current parameter values to the pedal")
+        }
+    }
+
+    // MARK: - Hold-to-Reset Button
+
+    /// Requires holding the mouse button for 2 seconds — impossible to trigger accidentally.
+    /// A red progress bar fills from left to right while held; releasing early cancels.
+    private var resetHoldButton: some View {
+        ZStack(alignment: .leading) {
+            // Background track
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.red.opacity(0.08))
+            // Progress fill
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.red.opacity(0.22))
+                    .frame(width: geo.size.width * resetHoldProgress)
+                    .animation(.linear(duration: 0), value: resetHoldProgress)
+            }
+            // Label
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 9))
+                Text(resetHoldProgress > 0 ? "Hold…" : "Reset to Stock")
+                    .font(.caption)
+            }
+            .padding(.horizontal, 7)
+            .foregroundStyle(Color.red.opacity(0.55 + 0.45 * resetHoldProgress))
+        }
+        .frame(height: 22)
+        .fixedSize(horizontal: true, vertical: false)
+        .clipShape(RoundedRectangle(cornerRadius: 4))
+        .overlay(RoundedRectangle(cornerRadius: 4)
+            .strokeBorder(Color.red.opacity(0.30 + 0.40 * resetHoldProgress), lineWidth: 0.5))
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in beginResetHold() }
+                .onEnded   { _ in cancelResetHold() }
+        )
+        .help("Hold for 2 seconds, then confirm to reset all parameters to factory defaults")
+        .alert("Reset to Stock?", isPresented: $showingResetAlert) {
+            Button("Reset", role: .destructive) { viewModel.resetToDefaults() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All knobs and settings will return to factory defaults and be sent to the pedal immediately.")
+        }
+    }
+
+    private func beginResetHold() {
+        guard resetHoldTimer == nil else { return }
+        resetHoldStart = Date()
+        let timer = Timer(timeInterval: 1.0/30.0, repeats: true) { t in
+            guard let start = resetHoldStart else { t.invalidate(); return }
+            let progress = min(1.0, Date().timeIntervalSince(start) / resetHoldDuration)
+            DispatchQueue.main.async {
+                resetHoldProgress = CGFloat(progress)
+                if progress >= 1.0 {
+                    t.invalidate()
+                    resetHoldTimer = nil
+                    resetHoldStart = nil
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        resetHoldProgress = 0
+                    }
+                    showingResetAlert = true
+                }
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        resetHoldTimer = timer
+    }
+
+    private func cancelResetHold() {
+        resetHoldTimer?.invalidate()
+        resetHoldTimer = nil
+        resetHoldStart = nil
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            resetHoldProgress = 0
         }
     }
 

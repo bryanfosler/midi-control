@@ -55,6 +55,14 @@ class PedalViewModel: ObservableObject, Identifiable {
         midiManager?.sendCC(channel: midiChannel, cc: param.cc, value: 127)
     }
 
+    func sendNoteOn(note: Int, velocity: Int = 100) {
+        midiManager?.sendNoteOn(channel: midiChannel, note: note, velocity: velocity)
+    }
+
+    func sendNoteOff(note: Int) {
+        midiManager?.sendNoteOff(channel: midiChannel, note: note)
+    }
+
     /// Change the pedal's MIDI channel by sending CC 104 on the CURRENT channel,
     /// then update the app to the new channel.
     ///

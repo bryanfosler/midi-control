@@ -18,13 +18,12 @@ enum ParameterTooltips {
     // MARK: - MOOD MKII tooltips
 
     private static let tooltips: [String: [Int: String]] = [
-        // CC 25 — Ramping Waveform
+        // CC 25 — Ramping Waveform (ranges per manual: Sine=0-14, Triangle=15-54, Ramp=55-80, Square=81-126, Random=127)
         "ramping_waveform": [
-            0: "Triangle",
-            25: "Sine",
-            51: "Square",
-            76: "Saw Up",
-            102: "Saw Down",
+            7:   "Sine",
+            34:  "Triangle",
+            67:  "Ramp",
+            103: "Square",
             127: "Random",
         ],
         // CC 14 — Time (when synced, these are musical divisions)
@@ -48,11 +47,11 @@ enum ParameterTooltips {
             108: "1/4",
             127: "1/2",
         ],
-        // CC 58 — Synth Output Type
+        // CC 58 — Synth Output Type (Open=0, On/Off=1, ADSR=2-127)
         "synth_output": [
-            0: "Mono",
-            64: "Poly",
-            127: "Arp",
+            0:  "Open",
+            1:  "On/Off",
+            64: "ADSR",
         ],
     ]
 }

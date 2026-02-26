@@ -5,22 +5,25 @@ struct KnobSlider: View {
     let parameter: ParameterDefinition
     @Binding var value: Int
     let onChange: (Int) -> Void
+    var showLabel: Bool = true
 
     @State private var sliderValue: Double = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(parameter.name)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(value)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text("CC\(parameter.cc)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+            if showLabel {
+                HStack {
+                    Text(parameter.name)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(value)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    Text("CC\(parameter.cc)")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
             Slider(value: $sliderValue, in: 0...127, step: 1)
                 .onChange(of: sliderValue) { _, newValue in

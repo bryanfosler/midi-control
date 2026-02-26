@@ -53,6 +53,7 @@ struct RotaryKnob: View {
                 .minimumScaleFactor(0.7)
         }
         .frame(width: 76)
+        .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 
     // MARK: - Knob Visual

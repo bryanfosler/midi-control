@@ -64,22 +64,50 @@ extension PedalDefinition {
                 type: .knob, section: "Hidden Options"
             ),
 
+            // MARK: - Hidden Options (toggle type)
+            ParameterDefinition(
+                id: "sync", name: "Sync", cc: 31,
+                type: .toggle(options: [
+                    ToggleOption(name: "Loop→Wet", value: 0),
+                    ToggleOption(name: "Off",       value: 2),
+                    ToggleOption(name: "Wet→Loop", value: 127),
+                ]),
+                section: "Hidden Options"
+            ),
+            ParameterDefinition(
+                id: "spread", name: "Spread", cc: 32,
+                type: .toggle(options: [
+                    ToggleOption(name: "💧 Wet",  value: 0),
+                    ToggleOption(name: "Both",    value: 2),
+                    ToggleOption(name: "🌙 Loop", value: 127),
+                ]),
+                section: "Hidden Options"
+            ),
+            ParameterDefinition(
+                id: "buffer_length", name: "Buffer Length", cc: 33,
+                type: .toggle(options: [
+                    ToggleOption(name: "MKI",  value: 0),
+                    ToggleOption(name: "Full", value: 127),
+                ]),
+                section: "Hidden Options"
+            ),
+
             // MARK: - Toggles
             ParameterDefinition(
                 id: "wet_channel", name: "Wet Channel", cc: 21,
                 type: .toggle(options: [
                     ToggleOption(name: "Reverb", value: 0),
-                    ToggleOption(name: "Delay", value: 64),
-                    ToggleOption(name: "Slip", value: 127),
+                    ToggleOption(name: "Delay",  value: 2),
+                    ToggleOption(name: "Slip",   value: 127),
                 ]),
                 section: "Toggles"
             ),
             ParameterDefinition(
                 id: "routing", name: "Routing", cc: 22,
                 type: .toggle(options: [
-                    ToggleOption(name: "L > W", value: 0),
-                    ToggleOption(name: "Parallel", value: 64),
-                    ToggleOption(name: "W > L", value: 127),
+                    ToggleOption(name: "In",       value: 0),
+                    ToggleOption(name: "In+Loop",  value: 2),
+                    ToggleOption(name: "Loop",     value: 127),
                 ]),
                 section: "Toggles"
             ),
@@ -87,32 +115,8 @@ extension PedalDefinition {
                 id: "micro_looper", name: "Micro-Looper", cc: 23,
                 type: .toggle(options: [
                     ToggleOption(name: "ENV",     value: 0),
-                    ToggleOption(name: "Tape",    value: 64),
+                    ToggleOption(name: "Tape",    value: 2),
                     ToggleOption(name: "Stretch", value: 127),
-                ]),
-                section: "Toggles"
-            ),
-            ParameterDefinition(
-                id: "sync", name: "Sync", cc: 31,
-                type: .toggle(options: [
-                    ToggleOption(name: "Off", value: 0),
-                    ToggleOption(name: "On", value: 127),
-                ]),
-                section: "Toggles"
-            ),
-            ParameterDefinition(
-                id: "spread", name: "Spread", cc: 32,
-                type: .toggle(options: [
-                    ToggleOption(name: "Off", value: 0),
-                    ToggleOption(name: "On", value: 127),
-                ]),
-                section: "Toggles"
-            ),
-            ParameterDefinition(
-                id: "buffer_length", name: "Buffer Length", cc: 33,
-                type: .toggle(options: [
-                    ToggleOption(name: "Short", value: 0),
-                    ToggleOption(name: "Long", value: 127),
                 ]),
                 section: "Toggles"
             ),
@@ -158,23 +162,39 @@ extension PedalDefinition {
             ),
             ParameterDefinition(
                 id: "clock_div_wet", name: "Clock Div (Wet)", cc: 53,
-                type: .knob, section: "Misc"
+                type: .toggle(options: [
+                    ToggleOption(name: "1/32",  value: 0),
+                    ToggleOption(name: "1/16T", value: 18),
+                    ToggleOption(name: "1/16",  value: 36),
+                    ToggleOption(name: "1/8T",  value: 54),
+                    ToggleOption(name: "1/8",   value: 72),
+                    ToggleOption(name: "1/4T",  value: 90),
+                    ToggleOption(name: "1/4",   value: 108),
+                    ToggleOption(name: "1/2",   value: 127),
+                ]),
+                section: "Misc"
             ),
             ParameterDefinition(
                 id: "clock_div_loop", name: "Clock Div (Loop)", cc: 54,
-                type: .knob, section: "Misc"
+                type: .toggle(options: [
+                    ToggleOption(name: "1/32",  value: 0),
+                    ToggleOption(name: "1/16T", value: 18),
+                    ToggleOption(name: "1/16",  value: 36),
+                    ToggleOption(name: "1/8T",  value: 54),
+                    ToggleOption(name: "1/8",   value: 72),
+                    ToggleOption(name: "1/4T",  value: 90),
+                    ToggleOption(name: "1/4",   value: 108),
+                    ToggleOption(name: "1/2",   value: 127),
+                ]),
+                section: "Misc"
             ),
             ParameterDefinition(
                 id: "true_bypass", name: "True Bypass", cc: 55,
                 type: .toggle(options: [
                     ToggleOption(name: "Buffered", value: 0),
-                    ToggleOption(name: "True Bypass", value: 127),
+                    ToggleOption(name: "True",     value: 127),
                 ]),
                 section: "Misc"
-            ),
-            ParameterDefinition(
-                id: "factory_reset", name: "Factory Reset", cc: 56,
-                type: .footswitch, section: "Misc"
             ),
 
             // MARK: - Synth Mode
@@ -184,7 +204,12 @@ extension PedalDefinition {
             ),
             ParameterDefinition(
                 id: "synth_output", name: "Output Type", cc: 58,
-                type: .knob, section: "Synth Mode"
+                type: .toggle(options: [
+                    ToggleOption(name: "Open",   value: 0),
+                    ToggleOption(name: "On/Off", value: 1),
+                    ToggleOption(name: "ADSR",   value: 64),
+                ]),
+                section: "Synth Mode"
             ),
             ParameterDefinition(
                 id: "synth_attack", name: "Attack", cc: 80,
@@ -204,7 +229,18 @@ extension PedalDefinition {
             ),
             ParameterDefinition(
                 id: "synth_octave", name: "Octave Transpose", cc: 57,
-                type: .knob, section: "Synth Mode", defaultValue: 64
+                type: .toggle(options: [
+                    ToggleOption(name: "-4", value: 0),
+                    ToggleOption(name: "-3", value: 16),
+                    ToggleOption(name: "-2", value: 32),
+                    ToggleOption(name: "-1", value: 48),
+                    ToggleOption(name: " 0", value: 64),
+                    ToggleOption(name: "+1", value: 79),
+                    ToggleOption(name: "+2", value: 95),
+                    ToggleOption(name: "+3", value: 111),
+                    ToggleOption(name: "+4", value: 127),
+                ]),
+                section: "Synth Mode", defaultValue: 64
             ),
             ParameterDefinition(
                 id: "synth_portamento", name: "Portamento", cc: 84,
@@ -221,37 +257,37 @@ extension PedalDefinition {
                 type: .knob, section: "Expression"
             ),
 
-            // MARK: - Dip Switches Left Bank (CC 61-68) — Wet channel
+            // MARK: - Dip Switches Left Bank (CC 61-68) — Ramping/Expression assignment
             ParameterDefinition(
                 id: "dip_l1", name: "Time", cc: 61,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l2", name: "Mix", cc: 62,
+                id: "dip_l2", name: "♦ Modify", cc: 62,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l3", name: "Length", cc: 63,
+                id: "dip_l3", name: "Clock", cc: 63,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l4", name: "Mod Wet", cc: 64,
+                id: "dip_l4", name: "○ Modify", cc: 64,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l5", name: "Clock", cc: 65,
+                id: "dip_l5", name: "Length", cc: 65,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l6", name: "Mod Loop", cc: 66,
+                id: "dip_l6", name: "Bounce", cc: 66,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l7", name: "Bounce", cc: 67,
+                id: "dip_l7", name: "Sweep", cc: 67,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
             ParameterDefinition(
-                id: "dip_l8", name: "Ramp", cc: 68,
+                id: "dip_l8", name: "Polarity", cc: 68,
                 type: .dipSwitch, section: "Dip Switches - Left"
             ),
 
@@ -297,6 +333,12 @@ extension PedalDefinition {
             ParameterDefinition(
                 id: "presetsave", name: "Preset Save", cc: 111,
                 type: .footswitch, section: "Utility"
+            ),
+
+            // MARK: - Factory Reset (isolated at the bottom)
+            ParameterDefinition(
+                id: "factory_reset", name: "Factory Reset", cc: 56,
+                type: .footswitch, section: "⚠ Factory Reset"
             ),
         ]
     )

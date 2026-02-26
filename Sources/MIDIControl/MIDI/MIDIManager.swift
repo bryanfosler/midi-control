@@ -117,6 +117,20 @@ class MIDIManager: ObservableObject {
         sendBytes([statusByte, ccByte, valueByte], to: endpoint)
     }
 
+    /// Send a MIDI Note On message
+    func sendNoteOn(channel: Int, note: Int, velocity: Int) {
+        guard let endpoint = selectedEndpoint else { return }
+        let statusByte = UInt8(0x90 | ((channel - 1) & 0x0F))
+        sendBytes([statusByte, UInt8(note & 0x7F), UInt8(velocity & 0x7F)], to: endpoint)
+    }
+
+    /// Send a MIDI Note Off message
+    func sendNoteOff(channel: Int, note: Int) {
+        guard let endpoint = selectedEndpoint else { return }
+        let statusByte = UInt8(0x80 | ((channel - 1) & 0x0F))
+        sendBytes([statusByte, UInt8(note & 0x7F), 0], to: endpoint)
+    }
+
     /// Send a MIDI Program Change message
     /// - Parameters:
     ///   - channel: MIDI channel 1-16 (converted to 0-15 internally)

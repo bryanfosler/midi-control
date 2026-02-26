@@ -171,13 +171,29 @@ struct PedalEnclosure: View {
         }
     }
 
-    // Brothers AM: channel badges "2" (pink, left) and "1" (gold, right)
+    // Brothers AM: LEDs above each footswitch reflect channel + hi-gain state.
+    // Green = active  |  Red = active + HI GAIN dip on  |  nil (dark) = bypassed off
+    // Numbered badges stay as static channel identifiers.
     private var brothersFootswitchSection: some View {
-        VStack(spacing: 6) {
-            ledDotRow
+        let ch2Active = bypassStates[103] ?? false
+        let ch2HiGain = (viewModel.state.values[72] ?? 0) > 0
+        let ch2LED: Color? = ch2Active
+            ? (ch2HiGain ? Color(red: 0.92, green: 0.18, blue: 0.18)  // red
+                         : Color(red: 0.25, green: 0.80, blue: 0.38)) // green
+            : nil
+
+        let ch1Active = bypassStates[102] ?? false
+        let ch1HiGain = (viewModel.state.values[71] ?? 0) > 0
+        let ch1LED: Color? = ch1Active
+            ? (ch1HiGain ? Color(red: 0.92, green: 0.18, blue: 0.18)  // red
+                         : Color(red: 0.25, green: 0.80, blue: 0.38)) // green
+            : nil
+
+        return VStack(spacing: 6) {
+            ledDotRow(left: ch2LED, center: nil, right: ch1LED)
             HStack(spacing: 0) {
                 Spacer()
-                // Ch2 (left footswitch)
+                // Ch2 (left footswitch) — static pink badge
                 if let param = viewModel.definition.parameter(byId: "ch2bypass") {
                     BypassButton(
                         parameter: param,
@@ -194,10 +210,9 @@ struct PedalEnclosure: View {
                     )
                 }
                 Spacer()
-                // Center K logo
                 cbLogo
                 Spacer()
-                // Ch1 (right footswitch)
+                // Ch1 (right footswitch) — static gold badge
                 if let param = viewModel.definition.parameter(byId: "ch1bypass") {
                     BypassButton(
                         parameter: param,
@@ -221,13 +236,21 @@ struct PedalEnclosure: View {
         .padding(.top, 10)
     }
 
-    // MOOD MK2: droplet icon (left = loop) and moon icon (right = wet)
+    // MOOD MK2: LEDs reflect bypass state.
+    // Loop LED (left): green when loop is active (recording or playing — app can't distinguish).
+    // Wet LED (right): green when wet channel is active.
+    // Center: always dark (decorative housing above the CB logo).
     private var moodFootswitchSection: some View {
-        VStack(spacing: 6) {
-            ledDotRow
+        let loopLED: Color? = (bypassStates[102] ?? false)
+            ? Color(red: 0.25, green: 0.80, blue: 0.38) : nil  // green or off
+        let wetLED: Color? = (bypassStates[103] ?? false)
+            ? Color(red: 0.25, green: 0.80, blue: 0.38) : nil  // green or off
+
+        return VStack(spacing: 6) {
+            ledDotRow(left: loopLED, center: nil, right: wetLED)
             HStack(spacing: 0) {
                 Spacer()
-                // Loop bypass (left = droplet)
+                // Loop bypass (left = droplet icon)
                 if let param = viewModel.definition.parameter(byId: "loop_bypass") {
                     BypassButton(
                         parameter: param,
@@ -243,10 +266,9 @@ struct PedalEnclosure: View {
                     )
                 }
                 Spacer()
-                // Center K logo
                 cbLogo
                 Spacer()
-                // Wet bypass (right = crescent moon)
+                // Wet bypass (right = crescent moon icon)
                 if let param = viewModel.definition.parameter(byId: "wet_bypass") {
                     BypassButton(
                         parameter: param,
@@ -295,29 +317,51 @@ struct PedalEnclosure: View {
 
     // MARK: - Shared Sub-views
 
-    /// Three LED housings evenly spaced — one above each bottom element
-    /// (left footswitch, center logo/toggle, right footswitch)
-    private var ledDotRow: some View {
+    /// Three LED housings evenly spaced — one above each bottom element.
+    /// Pass nil for a position to show it dark/off.
+    private func ledDotRow(left: Color? = nil, center: Color? = nil, right: Color? = nil) -> some View {
         HStack(spacing: 0) {
             Spacer()
-            ledDot
+            ledDot(color: left)
             Spacer()
-            ledDot
+            ledDot(color: center)
             Spacer()
-            ledDot
+            ledDot(color: right)
             Spacer()
         }
     }
 
-    private var ledDot: some View {
+    /// Single LED housing. color=nil → dark/off; color → glowing active state.
+    private func ledDot(color: Color?) -> some View {
         ZStack {
+            // LED body
             Circle()
-                .fill(Color.black.opacity(0.70))
+                .fill(color ?? Color.black.opacity(0.70))
                 .frame(width: 9, height: 9)
+            // Housing bezel
             Circle()
                 .strokeBorder(Color(white: 0.28), lineWidth: 0.5)
                 .frame(width: 9, height: 9)
+            // Lens highlight (only when active)
+            if color != nil {
+                Circle()
+                    .fill(Color.white.opacity(0.45))
+                    .frame(width: 3.5, height: 3.5)
+                    .offset(x: -1, y: -1.5)
+            }
         }
+        .frame(width: 9, height: 9)
+        // Outer glow rendered in background so it doesn't affect layout size
+        .background(
+            Group {
+                if let c = color {
+                    Circle()
+                        .fill(c.opacity(0.40))
+                        .frame(width: 16, height: 16)
+                        .blur(radius: 4)
+                }
+            }
+        )
     }
 
     /// Chase Bliss Audio logo — circular badge with "CB" lettermark.
