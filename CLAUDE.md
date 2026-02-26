@@ -59,6 +59,9 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - **`Color.clear` doesn't hit-test on macOS** — use `Color.white.opacity(0.001)` for invisible tap targets
 - **`DragGesture(minimumDistance: 0, coordinateSpace: .local)`** is the reliable tap+drag pattern on macOS; more dependable than `onTapGesture` with location
 - **`.help()` placement**: put on the view with the gesture, not a parent wrapper
+- **`.background` vs ZStack for decorative layers** — `.background` is layout-invisible (won't shift surrounding views); ZStack sizes to its largest child. Use `.background` for glows, shadows, halos
+- **Timer during mouse-hold** — add to `RunLoop.main` with mode `.common` (`RunLoop.main.add(timer, forMode: .common)`); tracking mode blocks `.default` timers
+- **Keyboard piano input** — `@FocusState` + `.focusable()` + `.onKeyPress(phases: [.down, .up])` on macOS 14+; handle both phases in one modifier
 
 ## Key Files
 - `Models/Pedals/BrothersAMDefinition.swift` — Brothers AM CC table
