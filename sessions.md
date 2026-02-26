@@ -392,6 +392,30 @@
 
 ---
 
+## Session 14 — MIDI Keyboard, LED Fix, Advanced Settings Overhaul
+
+**Date:** 02.26.2026
+**Time spent:** ~2h 30m
+
+### What We Built
+- Mini MIDI keyboard for MOOD MKII Synth Mode — collapsible 1-octave piano with Mac keyboard mapping (GarageBand-style: ASDFGHJ = white keys, WETYU = black keys, Z/X = octave shift)
+- `SteppedPickerView` component — indexed discrete positions for Clock Div (8 steps) and Octave Transpose (9 steps)
+- `WaveformPickerView` extracted into its own file
+
+### What Shipped
+- 3 new source files (MiniKeyboardView, SteppedPickerView, WaveformPickerView), 11 modified files, all pushed to origin main
+
+### Bugs Fixed
+- **LED glow layout shift** — glow circle inside ZStack was expanding the row's frame, pushing logo and bat switches upward when LED was on; fixed by moving glow to `.background` modifier
+- **Duplicate parameter labels** — KnobSlider was showing parameter name; parent in HiddenSettingsPanel also showed it; fixed with `showLabel: Bool = true` parameter on KnobSlider
+
+### Decisions Made
+- Advanced settings panel uses `maxWidth: .infinity` instead of fixed enclosure width — more room for controls
+- Parameters with >4 options use `SteppedPickerView`; ≤4 use segmented `ToggleSwitch`
+- Factory reset requires two deliberate actions: hold 2s → confirmation alert (both in PedalColumn reset button and HiddenSettingsPanel FactoryResetButton)
+- `MiniKeyboardView` uses `@FocusState` + `.onKeyPress(phases: [.down, .up])` for Mac keyboard input (macOS 14+)
+- Timer-based hold pattern uses `RunLoop.main` with `.common` mode so it fires during mouse-down events
+
 *To add a new session: copy the session template below and fill in details.*
 
 ```markdown

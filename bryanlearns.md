@@ -327,3 +327,67 @@ On a pedalboard, TRS cables run to pedals (forward/sideways). The MIDI input cab
 The cables exit in two different directions from perpendicular faces. On a pedalboard this reads as "organized." The switches on top are accessible without unplugging anything.
 
 **The meta-lesson**: When planning physical hardware, ask "where do cables go?" before "what fits?" The mechanical constraints are usually solvable — the routing is what determines whether the finished thing is annoying to live with.
+
+---
+
+## Session 14: Lessons — Layouts, Keyboards, and Invisible Bugs
+
+### The LED That Was Moving Furniture
+
+Picture a haunted house where a ghost keeps rearranging your living room furniture — but only when the lights turn on. That was basically the LED bug.
+
+When an LED activated, the logo above it and the bat switches below it would physically shift upward. Infuriating. The cause was subtle: the glow effect (a blurred circle, ~16px wide) lived *inside* a ZStack with the 9px LED dot. In SwiftUI, a ZStack sizes itself to fit its **largest child**. So the moment the 16px glow appeared, the entire ZStack grew to 16px, nudging everything around it.
+
+The fix: move the glow to `.background()`. Here's the key insight — SwiftUI's `.background` modifier renders content behind a view **without affecting its layout size**. The LED dot stays 9px in the layout; the glow just paints behind it in the same space. Zero layout impact.
+
+```swift
+.frame(width: 9, height: 9)          // layout is always 9×9
+.background(                          // glow paints here — layout ignores it
+    Circle().fill(c.opacity(0.40))
+        .frame(width: 16, height: 16).blur(radius: 4)
+)
+```
+
+This is one of those SwiftUI gotchas that's completely non-obvious until you know it: **ZStack = layout aware, .background = layout invisible**.
+
+### Building a Piano Keyboard: It's All About the Math
+
+A piano keyboard is a surprisingly geometry-heavy problem. The tricky part isn't the white keys — those are evenly spaced. It's the black keys that float *between* white keys at very specific positions.
+
+The formula for where a black key goes:
+```
+x position = (leftAdjacentWhiteKeyIndex + 1) × whiteKeyWidth - blackKeyWidth / 2
+```
+
+That `(leftAdjacentWhiteKeyIndex + 1)` is the *right edge* of the white key to the left. Then you back up half a black key width to center it in the gap. It's like placing a bookmark between two pages — the bookmark's center sits at the gap between pages.
+
+The Mac keyboard mapping follows GarageBand conventions so your muscle memory from GarageBand works here:
+- `A S D F G H J` = C D E F G A B (white keys, home row)
+- `W E T Y U` = C# D# F# G# A# (black keys, top row)
+- `Z / X` = octave down / octave up
+
+For keyboard input on macOS 14+, the pattern is `@FocusState` + `.focusable()` + `.onKeyPress(phases: [.down, .up])`. The `.down` fires Note On, `.up` fires Note Off. Using `phases: [.down, .up]` on a single modifier is cleaner than two separate handlers.
+
+### The RunLoop Trap with Hold-to-Activate
+
+Both the Reset-to-Stock button and the Factory Reset button use a "hold 2 seconds" pattern — you hold the mouse button and a red progress bar fills up. When it completes, a confirmation alert appears. Two deliberate actions = accidentally nuking your presets requires extraordinary effort.
+
+The implementation uses a `Timer` that fires every 1/30 second (30fps), updating `holdProgress` from 0 to 1. The crucial detail: add the timer to `RunLoop.main` with mode `.common`:
+
+```swift
+RunLoop.main.add(timer, forMode: .common)
+```
+
+Why `.common`? When you hold a mouse button, macOS enters a *tracking* run loop mode that blocks the **default** mode. A timer added to `.default` would just... stop firing while you're pressing. `.common` is a set of modes that includes tracking, so the timer keeps ticking no matter what the user's hands are doing. Without this, the progress bar would freeze the moment you started holding.
+
+### When Your Data Model Determines Your UI
+
+One elegant pattern this session: the parameter *definition* (in `MoodMKIIDefinition.swift`) now directly controls which UI widget renders. Clock Div has 8 options? That's `type: .toggle(options: [...])` with 8 items, which triggers `SteppedPickerView` (the indexed row of tappable segments). Octave Transpose has 9? Same deal.
+
+The rule implemented in `needsFullWidth()`:
+- `ramping_waveform` → always full-width (special waveform picker)
+- `factory_reset` → always full-width (big red button)
+- `.toggle` with **more than 4** options → full-width stepped picker
+- `.toggle` with ≤4 options → regular segmented control (fits in 2-column grid)
+
+The model knows what the data is; the view knows how to render given the count. Clean separation.
