@@ -341,6 +341,27 @@
 
 ---
 
+## Session 13 — V2 Image-Based UI Exploration (No Code Changes)
+
+**Date:** 02.26.2026
+**Time spent:** ~30m
+
+### What We Built
+- Visual mock HTML (`v2-image-mock.html`) showing proposed image-based controls vs. current drawn controls
+- Reviewed 7 generated UI assets: Brothers AM and MOOD MK2 base enclosures, 3 bat switch positions (left/center/right), 3 plum knob variants (pink/white/yellow indicators)
+- Documented 3 implementation options (A: image controls + drawn enclosure; B: enclosure photo backdrop; C: image knobs only) with trade-offs
+
+### What Shipped
+- Nothing — session was exploration only; project preserved intact on `main`
+
+### Decisions Made
+- Keep V1 unchanged for now; V2 image-based approach tabled but mocked and ready
+- If V2 is revisited: create `v2-image-based` branch off `main`, use Option A (image knobs + bat switch images, drawn enclosure stays)
+- Base enclosure PNGs not usable as interactive backgrounds (controls baked in, front-facing angle perspective)
+- Open questions logged in mock: arc indicator visibility, switch/knob sizing, LED images still needed, MOOD enclosure color update
+
+---
+
 ## Session 12 — Hardware Planning: Option B Enclosure Layout + MIDI Thru
 
 **Date:** 02.20.2026
