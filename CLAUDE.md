@@ -92,3 +92,12 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - CB logo between footswitches: thin ring + "CB" text, NOT any SF Symbol person/figure
 - AM badge (Brothers): 12-spike star OUTLINE (stroke, not fill) + filled gold circle center + "AM" text
 - MOOD brand: large bold italic "MOOD" with sunset gradient, "MKii" bottom-right corner
+
+## V2 Image-Based UI (tabled — assets ready)
+Generated PNG assets are in `~/Documents/Claude/Midi Control/Pedal UI Images/`:
+- `Brothers AM Base enclosure.png`, `MoodMK2 base enclosure.png` — full pedal photos (NOT usable as interactive backgrounds; controls baked in + front-facing angle)
+- `left bat switch.png`, `center bat switch.png`, `right bat switch.png` — 3-state image swap for toggles
+- `Plum knob pink indicator.png`, `Plum knob white indicator.png`, `Plum knob yellow indicator.png` — indicator at 12 o'clock; rotate whole image for knob turn
+
+**Recommended approach (Option A):** Image knobs + bat switch images, drawn enclosure stays. Work on branch `v2-image-based`.
+Visual mock at `~/Documents/Claude/Midi Control/v2-image-mock.html`.
