@@ -104,6 +104,23 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - AM badge (Brothers): 12-spike star OUTLINE (stroke, not fill) + filled gold circle center + "AM" text
 - MOOD brand: large bold italic "MOOD" with sunset gradient, "MKii" bottom-right corner
 
+## App Icon
+
+`Views/AppIconView.swift` — pure SwiftUI Canvas drawing of the 1024×1024 app icon.
+Design: dark maroon pedal enclosure + 1/4" TS cables plugged into both sides + central amber-arc knob.
+
+**To export the PNG for the asset catalog:**
+1. Open `AppIconView.swift` in Xcode
+2. Open the Preview canvas (Option+Cmd+Return or the Canvas button)
+3. Select the `"1024×1024 full"` preview
+4. Right-click the preview → "Save Image…" (or use the share icon)
+5. Save as `AppIcon-1024.png`
+6. Move it to: `Sources/MIDIControl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`
+7. Run `xcodegen generate` (asset catalog is already wired; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon)
+
+**Asset catalog location:** `Sources/MIDIControl/Assets.xcassets/AppIcon.appiconset/`
+**project.yml setting:** `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` (iOS target only)
+
 ## V2 Image-Based UI (tabled — assets ready)
 Generated PNG assets are in `~/Documents/Claude/Midi Control/Pedal UI Images/`:
 - `Brothers AM Base enclosure.png`, `MoodMK2 base enclosure.png` — full pedal photos (NOT usable as interactive backgrounds; controls baked in + front-facing angle)

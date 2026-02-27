@@ -12,6 +12,7 @@ struct PedalColumn: View {
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var landscapeSection: Int = 0
     #endif
 
     var body: some View {
@@ -49,8 +50,11 @@ struct PedalColumn: View {
 
     /// Portrait: scale enclosure to ~75% of available height so the whole pedal
     /// is visible on screen without scrolling. Advanced settings scroll below.
+    /// Minimum scale enforces 44pt touch targets on the knobs (natural knob frame = 76pt).
     private func portraitLayout(geo: GeometryProxy) -> some View {
-        let scale = min(1.0, geo.size.height * 0.75 / PedalEnclosure.enclosureHeight)
+        let minScale: CGFloat = 44.0 / 76.0  // keeps knob touch targets ≥ 44pt
+        let proposedScale = min(1.0, geo.size.height * 0.75 / PedalEnclosure.enclosureHeight)
+        let scale = max(proposedScale, minScale)
         return ScrollView {
             VStack(spacing: 14) {
                 channelBar
@@ -62,13 +66,13 @@ struct PedalColumn: View {
                 }
             }
             .padding(.horizontal)
-        .padding(.top, 6)
-        .padding(.bottom, 4)
+            .padding(.top, 6)
+            .padding(.bottom, 20)
         }
     }
 
     /// Landscape (compact height): enclosure on left scaled to fit height,
-    /// channel bar + panels in a scrollable right column.
+    /// segmented section picker + scrollable panels on the right.
     private func landscapeLayout(geo: GeometryProxy) -> some View {
         let scale = min(1.0, geo.size.height * 0.88 / PedalEnclosure.enclosureHeight)
         return HStack(alignment: .center, spacing: 0) {
@@ -81,17 +85,34 @@ struct PedalColumn: View {
 
             Divider()
 
-            ScrollView {
-                VStack(spacing: 14) {
-                    channelBar
-                    DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
-                    HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
-                    if viewModel.definition.id == "mood-mkii" {
-                        MiniKeyboardView(viewModel: viewModel)
+            VStack(spacing: 0) {
+                // Section picker — compact and keyboard-safe in landscape
+                Picker("", selection: $landscapeSection) {
+                    Text("Controls").tag(0)
+                    Text("Advanced").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+                ScrollView {
+                    if landscapeSection == 0 {
+                        VStack(spacing: 14) {
+                            channelBar
+                            DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
+                            if viewModel.definition.id == "mood-mkii" {
+                                MiniKeyboardView(viewModel: viewModel)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                    } else {
+                        HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
             }
         }
     }

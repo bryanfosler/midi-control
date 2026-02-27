@@ -98,18 +98,25 @@ private struct iPhoneRootView: View {
                     Button { showingMIDI = true } label: {
                         Image(systemName: "antenna.radiowaves.left.and.right")
                     }
+                    .hoverEffect(.highlight)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showingPresets = true } label: {
                         Image(systemName: "bookmark")
                     }
+                    .hoverEffect(.highlight)
                 }
             }
             .sheet(isPresented: $showingPresets) {
                 presetsSheet
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
             }
             .sheet(isPresented: $showingMIDI) {
                 MIDISheet()
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
         }
     }

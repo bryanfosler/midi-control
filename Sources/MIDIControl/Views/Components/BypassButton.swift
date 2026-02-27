@@ -84,6 +84,9 @@ struct BypassButton: View {
 
     private var footswitchBody: some View {
         Button(action: {
+            #if os(iOS)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            #endif
             isActive.toggle()
             onTap()
         }) {
@@ -150,6 +153,9 @@ struct BypassButton: View {
                     withAnimation(.easeInOut(duration: 0.08)) { isPressed = false }
                 }
         )
+        #if os(iOS)
+        .hoverEffect(.highlight)
+        #endif
     }
 }
 

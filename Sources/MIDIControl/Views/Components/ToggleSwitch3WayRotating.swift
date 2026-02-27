@@ -36,6 +36,9 @@ struct ToggleSwitch3WayRotating: View {
 
     private func select(index: Int) {
         liveIndex = index
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        #endif
         let newValue = options[index].value
         value = newValue
         onChange(newValue)
