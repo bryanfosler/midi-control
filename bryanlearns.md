@@ -391,3 +391,59 @@ The rule implemented in `needsFullWidth()`:
 - `.toggle` with ≤4 options → regular segmented control (fits in 2-column grid)
 
 The model knows what the data is; the view knows how to render given the count. Clean separation.
+
+---
+
+## Session 15 — How "One Codebase, Two Platforms" Actually Works
+
+### The Big Idea: Conditional Compilation
+
+You've probably seen `#if DEBUG` in Swift to include debug-only code. This session used the same trick at a larger scale with `#if os(macOS)` and `#if os(iOS)`. The Swift compiler literally throws away the other platform's code when building — so the iOS build never sees any AppKit, and the macOS build never sees any UIKit.
+
+This is the opposite approach from trying to write code that works everywhere. Instead of a universal API, you write *both versions* right next to each other and let the compiler pick:
+
+```swift
+#if os(macOS)
+Color(nsColor: .controlBackgroundColor)
+#else
+Color(.secondarySystemBackground)
+#endif
+```
+
+AppKit and UIKit have different APIs for system colors, fonts, views — almost everything. Conditional compilation gives you a clean way to handle all of that without duplicating files.
+
+### One Source Folder, Two Targets
+
+The biggest architectural choice: should iOS have its own separate folder of Swift files? We went with **no** — same `Sources/MIDIControl/` folder powers both targets. This means:
+
+- Bug fixes and new features automatically apply to both platforms
+- No "I updated macOS but forgot iOS" drift
+- New files just work on both unless you guard them with `#if os(iOS)`
+
+The tradeoff: every file *must* compile for both platforms. That's why we had to wrap things like `NSWindow.allowsAutomaticWindowTabbing` — iOS doesn't have `NSWindow`, and the compiler will error out if it sees it in an iOS build.
+
+### xcodegen: The Project File Generator
+
+Xcode projects are defined by a `.xcodeproj` file — which is actually a directory full of XML-like plists. They're huge, fragile, and a nightmare to hand-edit. xcodegen solves this by letting you define your project in a clean `project.yml` file and *generating* the `.xcodeproj` from it.
+
+Adding the iOS target was just adding a new section to `project.yml`. One `xcodegen generate` command and Xcode gained a second target pointing at the same source folder with different platform settings. This is one of those tools that feels like cheating once you know about it.
+
+### CABTMIDICentralViewController: Apple's Built-In Bluetooth MIDI UI
+
+CoreAudioKit ships a ready-made view controller (`CABTMIDICentralViewController`) that handles the entire Bluetooth MIDI pairing flow: scanning, connecting, naming devices. You just present it. Once a device pairs, CoreMIDI automatically adds it as a destination — our existing `MIDIManager.refreshDestinations()` picks it up for free via the setup-changed notification that was already wired.
+
+This is a great example of the Apple platform advantage: the plumbing for MIDI over Bluetooth already exists in the OS. You don't have to implement BLE scanning, pairing dialogs, or MIDI-over-BLE framing. Just present one view controller.
+
+### The Ghost Knob
+
+When you load a preset, all knobs snap to the preset's values. But as soon as you start twiddling a knob live, how do you know where the preset was? You've lost your reference point.
+
+The ghost knob solves this by keeping a faint dashed arc showing the last-loaded preset position while the live arc moves. It's the same idea as "before and after" — you can see both simultaneously.
+
+Implementation was clean: `PedalViewModel` got a `ghostValues: [Int: Int]` dictionary (keyed by CC number, same as everything else). `loadPreset` saves the preset's parameters there. `RotaryKnob` draws the ghost arc whenever `savedValue != displayValue`. Reset clears it back to nil, which hides the arc.
+
+The dashed stroke style is what makes it read as "reference" rather than "active":
+```swift
+StrokeStyle(lineWidth: 3.0, lineCap: .round, dash: [3, 5])
+```
+Three pixels on, five pixels off — subtle but visible once you know to look.
