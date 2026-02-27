@@ -15,6 +15,12 @@ class PedalViewModel: ObservableObject, Identifiable {
     /// Cleared when settings are edited or reset to defaults.
     @Published var activePresetId: UUID? = nil
 
+    /// Ghost knob values — the parameter values from the most recently loaded preset.
+    /// Shown as a dim dashed arc on each knob so you can see how far the live value
+    /// has drifted from the preset. Keyed by CC number (matches state.values).
+    /// Cleared when reset to defaults.
+    @Published var ghostValues: [Int: Int] = [:]
+
     private weak var midiManager: MIDIManager?
     private let presetStorage: PresetStorage
     @Published var presets: [Preset] = []
@@ -111,6 +117,7 @@ class PedalViewModel: ObservableObject, Identifiable {
         state.loadValues(preset.parameters)
         midiChannel = preset.midiChannel
         activePresetId = preset.id
+        ghostValues = preset.parameters
         sendAll()
     }
 
@@ -118,6 +125,7 @@ class PedalViewModel: ObservableObject, Identifiable {
     func resetToDefaults() {
         state.resetToDefaults()
         activePresetId = nil
+        ghostValues = [:]
         sendAll()
     }
 

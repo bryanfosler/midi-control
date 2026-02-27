@@ -111,7 +111,8 @@ struct PedalEnclosure: View {
                                 onChange: { val in viewModel.setValue(val, for: param) },
                                 theme: theme,
                                 pedalId: viewModel.definition.id,
-                                overrideIndicatorColor: indicatorColor
+                                overrideIndicatorColor: indicatorColor,
+                                savedValue: viewModel.ghostValues[param.cc]
                             )
                             Spacer(minLength: 0)
                         }

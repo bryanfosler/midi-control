@@ -32,3 +32,37 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: ["$(inherited)", "@executable_path/../Frameworks"]
     dependencies:
       - sdk: CoreMIDI.framework
+
+  MIDIControliOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Sources/MIDIControl
+        excludes:
+          - "**/*.plist"
+    info:
+      path: Sources/MIDIControl/Info_iOS.plist
+      properties:
+        NSBluetoothAlwaysUsageDescription: "Required to connect to MIDI pedals via Bluetooth MIDI"
+        UIRequiredDeviceCapabilities:
+          - bluetooth-le
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bryanfosler.MIDIControliOS
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        CODE_SIGN_STYLE: Automatic
+    dependencies:
+      - sdk: CoreMIDI.framework
+      - sdk: CoreAudioKit.framework
+      - sdk: CoreBluetooth.framework

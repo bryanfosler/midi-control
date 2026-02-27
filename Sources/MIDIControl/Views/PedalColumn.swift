@@ -16,29 +16,37 @@ struct PedalColumn: View {
     private let resetHoldDuration: TimeInterval = 2.0
 
     var body: some View {
+        #if os(macOS)
         HSplitView {
-            // Left: dip switches + pedal face + hidden settings, scrollable
-            ScrollView {
-                VStack(spacing: 14) {
-                    channelBar
-                    DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
-                    PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme)
-                    HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
-                    if viewModel.definition.id == "mood-mkii" {
-                        MiniKeyboardView(viewModel: viewModel)
-                    }
-                }
-                .padding()
-            }
-            .frame(minWidth: 340)
-
-            // Right: preset panel (compact)
+            scrollableContent
             PresetPanel(viewModel: viewModel)
                 .frame(minWidth: 140, maxWidth: 165)
         }
         .sheet(isPresented: $showingChannelSheet) {
             channelChangeSheet
         }
+        #else
+        scrollableContent
+            .sheet(isPresented: $showingChannelSheet) {
+                channelChangeSheet
+            }
+        #endif
+    }
+
+    private var scrollableContent: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                channelBar
+                DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
+                PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme)
+                HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
+                if viewModel.definition.id == "mood-mkii" {
+                    MiniKeyboardView(viewModel: viewModel)
+                }
+            }
+            .padding()
+        }
+        .frame(minWidth: 340)
     }
 
     // MARK: - Channel Bar
@@ -57,10 +65,10 @@ struct PedalColumn: View {
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(platformControlBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                            .strokeBorder(platformSeparatorColor, lineWidth: 0.5)
                     )
             )
             .help("MIDI channel this pedal is currently set to")
@@ -131,6 +139,24 @@ struct PedalColumn: View {
         }
     }
 
+    // MARK: - Platform Colors
+
+    private var platformControlBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(.secondarySystemBackground)
+        #endif
+    }
+
+    private var platformSeparatorColor: Color {
+        #if os(macOS)
+        Color(nsColor: .separatorColor)
+        #else
+        Color(.separator)
+        #endif
+    }
+
     private func beginResetHold() {
         guard resetHoldTimer == nil else { return }
         resetHoldStart = Date()
@@ -195,7 +221,7 @@ struct PedalColumn: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(10)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))
+            .background(RoundedRectangle(cornerRadius: 8).fill(platformControlBackground))
 
             // Channel picker
             HStack {

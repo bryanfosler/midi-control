@@ -1,9 +1,11 @@
 import SwiftUI
+#if os(macOS)
 import AppKit
+#endif
 
 /// A circular rotary knob with 270-degree sweep for CC 0–127 parameters.
 ///
-/// Interactions:
+/// Interactions (macOS):
 ///   • Click + drag UP      → increase value (clockwise)
 ///   • Click + drag DOWN    → decrease value (counter-clockwise)
 ///   • Shift + drag         → fine control (14px per unit)
@@ -11,6 +13,12 @@ import AppKit
 ///   • Single click, left half  → −10% (counter-clockwise)
 ///   • Option + click       → reset to default value
 ///   • Scroll up / down     → ±1 unit; Shift for fine (0.15×)
+///
+/// Interactions (iOS):
+///   • Drag UP/DOWN         → velocity-based sensitivity
+///   • Single tap, right    → +10% snap
+///   • Single tap, left     → −10% snap
+///   • Long-press           → reset to default value
 struct RotaryKnob: View {
     let parameter: ParameterDefinition
     @Binding var value: Int
@@ -18,6 +26,7 @@ struct RotaryKnob: View {
     let theme: PedalColorTheme
     var pedalId: String = ""
     var overrideIndicatorColor: Color? = nil
+    var savedValue: Int? = nil
 
     private let minAngle: Double = -135
     private let maxAngle: Double =  135
@@ -70,8 +79,19 @@ struct RotaryKnob: View {
                 .stroke(Color.white.opacity(0.09), style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                 .frame(width: 66, height: 66)
 
-            // ── Active arc with soft glow ──
+            // ── Ghost arc — shows saved/preset value as a dim dashed arc ──
             let arcColor = overrideIndicatorColor ?? theme.dipOnColor
+            if let saved = savedValue, saved != displayValue {
+                let ghostRotation = minAngle + Double(saved) / 127.0 * (maxAngle - minAngle)
+                ArcShape(startAngle: minAngle, endAngle: ghostRotation)
+                    .stroke(
+                        arcColor.opacity(0.28),
+                        style: StrokeStyle(lineWidth: 3.0, lineCap: .round, dash: [3, 5])
+                    )
+                    .frame(width: 66, height: 66)
+            }
+
+            // ── Active arc with soft glow ──
             ArcShape(startAngle: minAngle, endAngle: rotation)
                 .stroke(arcColor.opacity(0.55), style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .frame(width: 66, height: 66)
@@ -177,6 +197,7 @@ struct RotaryKnob: View {
             .rotationEffect(.degrees(rotation))
         }
         .frame(width: 70, height: 70)
+        #if os(macOS)
         // Scroll wheel captured via NSView background (doesn't block SwiftUI gestures)
         .background(
             ScrollWheelCapture { delta in
@@ -193,6 +214,7 @@ struct RotaryKnob: View {
                 }
             }
         )
+        #endif
         // DragGesture handles drag (knob turning) AND click (tap with no movement)
         .gesture(
             // .local coordinate space: startLocation.x is 0…58 within the knob,
@@ -215,22 +237,35 @@ struct RotaryKnob: View {
                     // Velocity-based sensitivity:
                     //   Slow drag  (~0 pts/s)   → 0.20 units/px  (= 5px per unit, original feel)
                     //   Fast drag  (500+ pts/s) → 1.00 units/px  (= 5× faster)
-                    // Shift held: fixed fine sensitivity, no acceleration.
-                    let isFine = NSEvent.modifierFlags.contains(.shift)
+                    // macOS: Shift held → fixed fine sensitivity, no acceleration.
+                    // iOS: velocity-based only, no modifier keys.
                     let sensitivity: Double
+                    #if os(macOS)
+                    let isFine = NSEvent.modifierFlags.contains(.shift)
                     if isFine {
                         sensitivity = 1.0 / 14.0
                     } else {
-                        let speed = abs(gesture.velocity.height)       // pts/sec
-                        let accel = min(1.0, speed / 500.0)            // 0 → 1 over 0–500 pts/s
-                        sensitivity = 0.20 + accel * 0.80              // 0.20 → 1.00 units/px
+                        let speed = abs(gesture.velocity.height)
+                        let accel = min(1.0, speed / 500.0)
+                        sensitivity = 0.20 + accel * 0.80
                     }
+                    #else
+                    let speed = abs(gesture.velocity.height)
+                    let accel = min(1.0, speed / 500.0)
+                    sensitivity = 0.20 + accel * 0.80
+                    #endif
 
+                    let oldAccumulator = fractionalAccumulator
                     fractionalAccumulator += Double(dy) * sensitivity
                     fractionalAccumulator = max(0, min(127, fractionalAccumulator))
 
                     let newValue = Int(fractionalAccumulator.rounded())
                     if newValue != liveValue {
+                        #if os(iOS)
+                        if Int(oldAccumulator) != Int(fractionalAccumulator) {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                        #endif
                         liveValue = newValue
                         value = newValue
                         onChange(newValue)
@@ -245,6 +280,7 @@ struct RotaryKnob: View {
                     // Distinguish click (tiny movement) from drag
                     guard abs(gesture.translation.height) < 3 else { return }
 
+                    #if os(macOS)
                     if NSEvent.modifierFlags.contains(.option) {
                         value = parameter.defaultValue
                         onChange(parameter.defaultValue)
@@ -265,16 +301,40 @@ struct RotaryKnob: View {
                             onChange(newValue)
                         }
                     }
+                    #else
+                    // iOS: snap logic only; long-press handles reset
+                    let snapPoints = (0...10).map { Int((Double($0) / 10.0 * 127.0).rounded()) }
+                    let clickedRight = gesture.startLocation.x > 29
+                    let newValue: Int
+                    if clickedRight {
+                        newValue = snapPoints.first(where: { $0 > value }) ?? 127
+                    } else {
+                        newValue = snapPoints.last(where:  { $0 < value }) ?? 0
+                    }
+                    if newValue != value {
+                        value = newValue
+                        onChange(newValue)
+                    }
+                    #endif
                 }
         )
+        #if os(iOS)
+        // Long-press to reset to default value (replaces Option+click on macOS)
+        .onLongPressGesture(minimumDuration: 0.6) {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            value = parameter.defaultValue
+            onChange(parameter.defaultValue)
+        }
+        #endif
         // .help() is placed here (on the interactive ZStack) so macOS tooltip
         // detection fires on the same NSView layer that receives mouse events.
         .help(ParameterDescriptions.description(for: parameter.id, cc: parameter.cc, pedalId: pedalId))
     }
 }
 
-// MARK: - Scroll Wheel Capture
+// MARK: - Scroll Wheel Capture (macOS only)
 
+#if os(macOS)
 /// A transparent NSView that captures scroll wheel events and forwards delta to a closure.
 /// Used as .background() so it sits below SwiftUI gestures without blocking them.
 private struct ScrollWheelCapture: NSViewRepresentable {
@@ -309,6 +369,7 @@ private class ScrollCaptureView: NSView {
         }
     }
 }
+#endif
 
 // MARK: - Diamond Knurling Ring
 
