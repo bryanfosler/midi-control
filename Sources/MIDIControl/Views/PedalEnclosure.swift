@@ -6,6 +6,7 @@ struct PedalEnclosure: View {
     @ObservedObject var viewModel: PedalViewModel
     let layout: PedalLayout
     let theme: PedalColorTheme
+    var scale: CGFloat = 1.0
 
     @State private var bypassStates: [Int: Bool] = [:]
 
@@ -72,6 +73,8 @@ struct PedalEnclosure: View {
             }
         }
         .frame(width: Self.enclosureWidth, height: Self.enclosureHeight)
+        .scaleEffect(scale)
+        .frame(width: Self.enclosureWidth * scale, height: Self.enclosureHeight * scale)
     }
 
     // MARK: - Input Strip

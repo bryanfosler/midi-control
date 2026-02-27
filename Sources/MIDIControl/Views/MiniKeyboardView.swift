@@ -83,13 +83,13 @@ struct MiniKeyboardView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(platformControlBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(
                             isFocused
                                 ? Color.accentColor.opacity(0.55)
-                                : Color(nsColor: .separatorColor),
+                                : platformSeparatorColor,
                             lineWidth: isFocused ? 1.0 : 0.5
                         )
                 )
@@ -241,6 +241,24 @@ struct MiniKeyboardView: View {
                 .font(.system(size: 9))
                 .foregroundStyle(.quaternary)
         }
+    }
+
+    // MARK: - Platform colors
+
+    private var platformControlBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(.secondarySystemBackground)
+        #endif
+    }
+
+    private var platformSeparatorColor: Color {
+        #if os(macOS)
+        Color(nsColor: .separatorColor)
+        #else
+        Color(.separator)
+        #endif
     }
 
     // MARK: - Keyboard input

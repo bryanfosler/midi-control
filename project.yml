@@ -36,7 +36,7 @@ targets:
   MIDIControliOS:
     type: application
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "17.0"
     sources:
       - path: Sources/MIDIControl
         excludes:
@@ -60,7 +60,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanfosler.MIDIControliOS
         SWIFT_VERSION: "5.0"
-        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGN_STYLE: Automatic
     dependencies:
       - sdk: CoreMIDI.framework

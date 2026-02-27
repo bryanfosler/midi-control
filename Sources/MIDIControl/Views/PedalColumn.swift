@@ -9,11 +9,10 @@ struct PedalColumn: View {
 
     @State private var showingChannelSheet = false
     @State private var targetChannel: Int  = 2   // selection inside the sheet
-    @State private var resetHoldProgress: CGFloat = 0
-    @State private var resetHoldTimer: Timer? = nil
-    @State private var resetHoldStart: Date? = nil
-    @State private var showingResetAlert = false
-    private let resetHoldDuration: TimeInterval = 2.0
+
+    #if os(iOS)
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
 
     var body: some View {
         #if os(macOS)
@@ -26,12 +25,79 @@ struct PedalColumn: View {
             channelChangeSheet
         }
         #else
-        scrollableContent
+        iOSLayout
             .sheet(isPresented: $showingChannelSheet) {
                 channelChangeSheet
             }
         #endif
     }
+
+    // MARK: - iOS Layouts
+
+    #if os(iOS)
+    private var iOSLayout: some View {
+        GeometryReader { geo in
+            Group {
+                if verticalSizeClass == .compact {
+                    landscapeLayout(geo: geo)
+                } else {
+                    portraitLayout(geo: geo)
+                }
+            }
+        }
+    }
+
+    /// Portrait: scale enclosure to ~75% of available height so the whole pedal
+    /// is visible on screen without scrolling. Advanced settings scroll below.
+    private func portraitLayout(geo: GeometryProxy) -> some View {
+        let scale = min(1.0, geo.size.height * 0.75 / PedalEnclosure.enclosureHeight)
+        return ScrollView {
+            VStack(spacing: 14) {
+                channelBar
+                DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
+                PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme, scale: scale)
+                HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
+                if viewModel.definition.id == "mood-mkii" {
+                    MiniKeyboardView(viewModel: viewModel)
+                }
+            }
+            .padding(.horizontal)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+        }
+    }
+
+    /// Landscape (compact height): enclosure on left scaled to fit height,
+    /// channel bar + panels in a scrollable right column.
+    private func landscapeLayout(geo: GeometryProxy) -> some View {
+        let scale = min(1.0, geo.size.height * 0.88 / PedalEnclosure.enclosureHeight)
+        return HStack(alignment: .center, spacing: 0) {
+            VStack {
+                Spacer(minLength: 0)
+                PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme, scale: scale)
+                Spacer(minLength: 0)
+            }
+            .frame(width: PedalEnclosure.enclosureWidth * scale + 12)
+
+            Divider()
+
+            ScrollView {
+                VStack(spacing: 14) {
+                    channelBar
+                    DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
+                    HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
+                    if viewModel.definition.id == "mood-mkii" {
+                        MiniKeyboardView(viewModel: viewModel)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+    #endif
+
+    // MARK: - macOS Scrollable Content
 
     private var scrollableContent: some View {
         ScrollView {
@@ -85,57 +151,10 @@ struct PedalColumn: View {
 
             Spacer()
 
-            resetHoldButton
-
             Button("Send All") {
                 viewModel.sendAll()
             }
             .help("Re-send all current parameter values to the pedal")
-        }
-    }
-
-    // MARK: - Hold-to-Reset Button
-
-    /// Requires holding the mouse button for 2 seconds — impossible to trigger accidentally.
-    /// A red progress bar fills from left to right while held; releasing early cancels.
-    private var resetHoldButton: some View {
-        ZStack(alignment: .leading) {
-            // Background track
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.red.opacity(0.08))
-            // Progress fill
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.red.opacity(0.22))
-                    .frame(width: geo.size.width * resetHoldProgress)
-                    .animation(.linear(duration: 0), value: resetHoldProgress)
-            }
-            // Label
-            HStack(spacing: 4) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 9))
-                Text(resetHoldProgress > 0 ? "Hold…" : "Reset to Stock")
-                    .font(.caption)
-            }
-            .padding(.horizontal, 7)
-            .foregroundStyle(Color.red.opacity(0.55 + 0.45 * resetHoldProgress))
-        }
-        .frame(height: 22)
-        .fixedSize(horizontal: true, vertical: false)
-        .clipShape(RoundedRectangle(cornerRadius: 4))
-        .overlay(RoundedRectangle(cornerRadius: 4)
-            .strokeBorder(Color.red.opacity(0.30 + 0.40 * resetHoldProgress), lineWidth: 0.5))
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in beginResetHold() }
-                .onEnded   { _ in cancelResetHold() }
-        )
-        .help("Hold for 2 seconds, then confirm to reset all parameters to factory defaults")
-        .alert("Reset to Stock?", isPresented: $showingResetAlert) {
-            Button("Reset", role: .destructive) { viewModel.resetToDefaults() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("All knobs and settings will return to factory defaults and be sent to the pedal immediately.")
         }
     }
 
@@ -155,38 +174,6 @@ struct PedalColumn: View {
         #else
         Color(.separator)
         #endif
-    }
-
-    private func beginResetHold() {
-        guard resetHoldTimer == nil else { return }
-        resetHoldStart = Date()
-        let timer = Timer(timeInterval: 1.0/30.0, repeats: true) { t in
-            guard let start = resetHoldStart else { t.invalidate(); return }
-            let progress = min(1.0, Date().timeIntervalSince(start) / resetHoldDuration)
-            DispatchQueue.main.async {
-                resetHoldProgress = CGFloat(progress)
-                if progress >= 1.0 {
-                    t.invalidate()
-                    resetHoldTimer = nil
-                    resetHoldStart = nil
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        resetHoldProgress = 0
-                    }
-                    showingResetAlert = true
-                }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        resetHoldTimer = timer
-    }
-
-    private func cancelResetHold() {
-        resetHoldTimer?.invalidate()
-        resetHoldTimer = nil
-        resetHoldStart = nil
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            resetHoldProgress = 0
-        }
     }
 
     // MARK: - Channel Change Sheet

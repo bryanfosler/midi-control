@@ -7,7 +7,11 @@ struct HiddenSettingsPanel: View {
     let layout: PedalLayout
     let theme: PedalColorTheme
 
+    #if os(iOS)
+    @State private var isPanelExpanded: Bool = false
+    #else
     @State private var isPanelExpanded: Bool = true
+    #endif
     @State private var collapsedSections: Set<String> = []
 
     private var hiddenSections: [(name: String, parameters: [ParameterDefinition])] {
@@ -39,6 +43,13 @@ struct HiddenSettingsPanel: View {
                                     .padding(.horizontal, 4)
                             }
                         }
+
+                        Divider()
+                            .background(theme.labelColor.opacity(0.12))
+                            .padding(.horizontal, 4)
+                            .padding(.top, 4)
+
+                        ResetToStockButton(onConfirmed: { viewModel.resetToDefaults() })
                     }
                     .padding(12)
                 }
@@ -262,6 +273,93 @@ struct HiddenSettingsPanel: View {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(theme.labelColor.opacity(0.28), lineWidth: 1)
             )
+    }
+}
+
+// MARK: - Reset to Stock Button
+// Resets all app-side parameter values to factory defaults and sends them to the pedal.
+// Requires a 10-second hold to arm, then confirmation alert to execute.
+
+private struct ResetToStockButton: View {
+    let onConfirmed: () -> Void
+
+    @State private var holdProgress: CGFloat = 0
+    @State private var holdTimer: Timer? = nil
+    @State private var holdStart: Date? = nil
+    @State private var showingAlert = false
+    private let holdDuration: TimeInterval = 10.0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.orange.opacity(0.07))
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.orange.opacity(0.20))
+                        .frame(width: geo.size.width * holdProgress)
+                }
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 10))
+                    Text(holdProgress > 0 ? "Hold to arm… (\(Int((1.0 - holdProgress) * holdDuration + 1))s)" : "Reset to Stock")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .padding(.horizontal, 10)
+                .foregroundStyle(Color.orange.opacity(0.50 + 0.50 * holdProgress))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 30)
+            .clipShape(RoundedRectangle(cornerRadius: 5))
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .strokeBorder(Color.orange.opacity(0.28 + 0.42 * holdProgress), lineWidth: 0.75)
+            )
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in beginHold() }
+                    .onEnded   { _ in cancelHold() }
+            )
+            .alert("Reset to Stock?", isPresented: $showingAlert) {
+                Button("Reset", role: .destructive) { onConfirmed() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("All knobs and settings will return to factory defaults and be sent to the pedal immediately.")
+            }
+
+            Text("Hold 10s then confirm — resets all parameters to factory defaults in the app")
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func beginHold() {
+        guard holdTimer == nil else { return }
+        holdStart = Date()
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { t in
+            guard let start = holdStart else { t.invalidate(); return }
+            let progress = min(1.0, Date().timeIntervalSince(start) / holdDuration)
+            DispatchQueue.main.async {
+                holdProgress = CGFloat(progress)
+                if progress >= 1.0 {
+                    t.invalidate()
+                    holdTimer = nil
+                    holdStart = nil
+                    withAnimation(.spring(response: 0.3)) { holdProgress = 0 }
+                    showingAlert = true
+                }
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        holdTimer = timer
+    }
+
+    private func cancelHold() {
+        holdTimer?.invalidate()
+        holdTimer = nil
+        holdStart = nil
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) { holdProgress = 0 }
     }
 }
 
