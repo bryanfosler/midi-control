@@ -446,20 +446,35 @@
 - iPad layout uses `NavigationSplitView`, iPhone uses `TabView` — determined by `horizontalSizeClass`
 
 ```markdown
-## Session N — [Title]
+## Session 16 — iOS UI Overhaul: Responsive Layout & Pedal Picker
 
-**Date:** MM.DD.YYYY
-**Time spent:** Xh Xm Xs
+**Date:** 02.27.2026
+**Time spent:** ~2h
 
 ### What We Built
--
+- iPhone single-pedal-at-a-time view with segmented picker (≤2 pedals) or Menu dropdown (>2) merged into nav bar as `.principal` toolbar item
+- iPhone portrait: `GeometryReader`-driven enclosure scaling so the full pedal fits on screen without scrolling
+- iPhone landscape: two-column `HStack` — scaled enclosure on left, channel bar + panels scrollable on right
+- iPad landscape: side-by-side multi-pedal layout matching macOS (GeometryReader `width > height`); portrait keeps NavigationSplitView
+- Presets and MIDI access moved to toolbar sheet buttons, replacing bottom TabView
 
 ### What Shipped
--
+- iOS deployment target raised from 16 → 17; `KeyPress`/`onKeyPress` compile clean
+- `MiniKeyboardView` cross-platform colors fixed (was macOS-only `nsColor`)
+- Advanced settings collapsed by default on iPhone
+- Reset to Stock moved into Advanced Settings, 10-second hold on all platforms (was 2s in channel bar)
+- Eliminated ~92pt of dead space at top by merging picker into nav bar
+- Committed `7f5f453` and pushed to `bryanfosler/midi-control`
 
 ### Bugs Fixed
--
+- `KeyPress` availability error on iOS (was targeting 16, API requires 17)
+- `Color(nsColor:)` iOS compile error in `MiniKeyboardView` — added `#if os(macOS)` platform color helpers
+- xcode-select pointing at CommandLineTools instead of Xcode.app — worked around with `DEVELOPER_DIR` env var
 
 ### Decisions Made
--
+- iOS 17 minimum: justified by `.onKeyPress(phases:)` requiring 17, reasonable baseline in 2026
+- Picker in `.principal` nav bar slot instead of a separate row — saves ~48pt, cleaner
+- iPad portrait: NavigationSplitView (sidebar + detail) vs landscape: full side-by-side (same as macOS)
+- Reset to Stock → orange (vs factory reset → red) to visually distinguish app-side vs hardware reset
+- 10s hold for Reset to Stock: destructive enough to warrant more friction than the 2s factory reset
 ```

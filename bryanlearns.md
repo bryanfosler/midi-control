@@ -447,3 +447,70 @@ The dashed stroke style is what makes it read as "reference" rather than "active
 StrokeStyle(lineWidth: 3.0, lineCap: .round, dash: [3, 5])
 ```
 Three pixels on, five pixels off — subtle but visible once you know to look.
+
+---
+
+## Session 16: Making One App Work on Every Screen Size
+
+### The iOS Size Class Trap
+
+SwiftUI gives you `horizontalSizeClass` and `verticalSizeClass` as environment values to detect screen form factors. Sounds great. Here's the trap: **on iPad, both are `.regular` in portrait AND landscape.** So if you check `horizontalSizeClass == .regular` to mean "iPad", you can't then distinguish between iPad portrait and iPad landscape.
+
+The fix for iPad orientation: use `GeometryReader` and compare `width > height` directly. No magic environment — just geometry. If the screen is wider than it is tall, it's landscape.
+
+iPhone landscape is different: `verticalSizeClass == .compact` correctly fires when an iPhone rotates. So:
+- iPad orientation → `GeometryReader { geo in geo.size.width > geo.size.height }`
+- iPhone landscape → `@Environment(\.verticalSizeClass) == .compact`
+
+### scaleEffect + Double Frame = Responsive Enclosure
+
+The pedal enclosure was designed at fixed 280×500 points — all the proportions, knob sizes, and spacing are hardcoded. Making it responsive without rewriting everything uses a SwiftUI trick:
+
+```swift
+.frame(width: 280, height: 500)      // 1. lay out at natural size
+.scaleEffect(scale)                   // 2. visually shrink the rendered output
+.frame(width: 280 * scale, height: 500 * scale)  // 3. tell layout the new size
+```
+
+Step 1 tells the internal content "you have 280×500 to work with." Step 2 is like CSS `transform: scale()` — it shrinks the pixels but SwiftUI's layout engine still thinks the view is 280×500. Step 3 overrides that — it tells SwiftUI "actually, only reserve this much space." Surrounding views see the scaled size. The enclosure renders sharp because it's drawn at full resolution then scaled down by the GPU.
+
+The scale factor comes from `GeometryReader`: divide the available height by the enclosure height, cap at 1.0 so we never upscale. `min(1.0, geo.size.height * 0.75 / 500)`.
+
+### Navigation Bar as Prime Real Estate
+
+The nav bar is always there — you need it for the toolbar buttons. Leaving it occupied only by a title is a waste of space. SwiftUI's `.principal` toolbar placement puts any view in the center of the navigation bar, replacing the title.
+
+```swift
+ToolbarItem(placement: .principal) {
+    Picker("Pedal", selection: $selectedIndex) { ... }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 220)
+}
+```
+
+This moved the pedal picker from its own row (with padding, ~48pt total) into the existing nav bar, saving ~48pt of vertical space on an already-crowded iPhone screen. The MIDI and Presets buttons stay in `.navigationBarTrailing` — all three controls live in the same bar.
+
+### Landscape on iPhone: Think Columns, Not Rows
+
+Portrait mode is for scrolling vertically — the phone is tall and narrow. Landscape flips that: you have more width but almost no height (maybe 330pt usable). A vertical scroll with a 500pt enclosure doesn't work.
+
+The solution is a **two-column HStack**: enclosure on the left (scaled to fit the available height), controls scrollable on the right. This is the same pattern as macOS's HSplitView, just without the adjustable divider. One divider, two regions, everything fits.
+
+```swift
+HStack(alignment: .center, spacing: 0) {
+    VStack {
+        Spacer()
+        PedalEnclosure(..., scale: scale)
+        Spacer()
+    }
+    .frame(width: enclosureWidth * scale + 12)
+    
+    Divider()
+    
+    ScrollView {
+        // channel bar, dip switches, advanced settings
+    }
+}
+```
+
+The key insight: don't fight the screen shape. Portrait = tall → stack vertically. Landscape = wide → split horizontally. Match your layout to the constraint.
