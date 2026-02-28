@@ -85,6 +85,7 @@ struct HiddenSettingsPanel: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Per-section collapsible
@@ -112,6 +113,7 @@ struct HiddenSettingsPanel: View {
                 }
             }
             .buttonStyle(.plain)
+            .contentShape(Rectangle())
 
             if !isCollapsed {
                 sectionContent(for: section)

@@ -4,6 +4,32 @@
 
 ---
 
+## Session 17 — First iOS Device Install
+
+**Date:** 02.27.2026
+**Time spent:** ~30m
+
+### What We Did
+- Walked through the full first-time iOS device install flow using Xcode personal team (free, no App Store)
+- Resolved "Signing requires a development team" — navigated to MIDIControliOS target → Signing & Capabilities → selected Personal Team
+- Approved Mac Keychain access prompt (codesign accessing Apple Development cert) — normal part of first-time signing
+- Enabled Developer Mode on iPhone (Settings → Privacy & Security → Developer Mode → restart → confirm)
+- App successfully installed and running on device
+
+### What Shipped
+- `MIDIControliOS` running on Bryan's iPhone — no code changes needed, project was already wired correctly
+
+### Key Learnings Documented
+- Free personal team vs $99/yr paid: personal team = device-only, 7-day expiry, no App Store
+- Code signing flow: cert in Mac Keychain → provisioning profile → signed binary → device trust
+- Developer Mode: iOS 16+ security requirement, one-time per device, requires restart
+- First-time trust: Settings → General → VPN & Device Management → Apple ID → Trust
+
+### Decisions Made
+- Personal device install is sufficient for current use case — no App Store submission needed
+
+---
+
 ## Session 1 — Phase 1 MVP Build
 
 **Date:** 02.16.2026

@@ -12,6 +12,7 @@ struct PedalColumn: View {
 
     #if os(iOS)
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var landscapeSection: Int = 0
     #endif
 
@@ -57,7 +58,11 @@ struct PedalColumn: View {
         let scale = max(proposedScale, minScale)
         return ScrollView {
             VStack(spacing: 14) {
-                channelBar
+                // iPad: show channelBar inline (screen space allows it).
+                // iPhone: channelBar lives in the Settings sheet to maximise pedal canvas.
+                if horizontalSizeClass == .regular {
+                    channelBar
+                }
                 DipSwitchPanel(viewModel: viewModel, layout: layout, theme: theme)
                 PedalEnclosure(viewModel: viewModel, layout: layout, theme: theme, scale: scale)
                 HiddenSettingsPanel(viewModel: viewModel, layout: layout, theme: theme)
@@ -66,8 +71,8 @@ struct PedalColumn: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 6)
-            .padding(.bottom, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 8)
         }
     }
 
@@ -140,35 +145,31 @@ struct PedalColumn: View {
 
     private var channelBar: some View {
         HStack(spacing: 8) {
-            // Read-only channel indicator — shows what the app is currently sending on
-            HStack(spacing: 4) {
-                Text("Ch")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("\(viewModel.midiChannel)")
-                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(platformControlBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .strokeBorder(platformSeparatorColor, lineWidth: 0.5)
-                    )
-            )
-            .help("MIDI channel this pedal is currently set to")
-
-            // Button to reconfigure the pedal's channel
+            // Tappable channel pill — tap to open the channel-change sheet
             Button {
                 targetChannel = viewModel.midiChannel
                 showingChannelSheet = true
             } label: {
-                Label("Set Channel", systemImage: "antenna.radiowaves.left.and.right")
-                    .font(.caption)
+                HStack(spacing: 4) {
+                    Text("Ch")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(viewModel.midiChannel)")
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(platformControlBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(platformSeparatorColor, lineWidth: 0.5)
+                        )
+                )
             }
-            .help("Change the pedal's MIDI channel (sends CC 104 to the hardware)")
+            .buttonStyle(.plain)
+            .help("Tap to change the pedal's MIDI channel (sends CC 104 to the hardware)")
 
             Spacer()
 

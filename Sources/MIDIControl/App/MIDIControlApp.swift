@@ -15,10 +15,11 @@ struct MIDIControlApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appViewModel)
-                .frame(minWidth: 1100, minHeight: 700)
+                .frame(minWidth: 860, minHeight: 640)
         }
         .windowStyle(.titleBar)
-        .defaultSize(width: 1400, height: 850)
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 1200, height: 820)
         #else
         WindowGroup {
             iOSContentView()

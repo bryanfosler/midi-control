@@ -135,7 +135,12 @@ struct DipSwitch: View {
         }
         .frame(width: 22, height: 34)
         .contentShape(Rectangle())
-        .onTapGesture { isOn.toggle() }
+        .onTapGesture {
+            #if os(iOS)
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+            #endif
+            isOn.toggle()
+        }
         // .help() on the interactive view so macOS tooltip fires on the right NSView layer
         .help(
             parameter.map {

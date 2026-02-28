@@ -514,3 +514,68 @@ HStack(alignment: .center, spacing: 0) {
 ```
 
 The key insight: don't fight the screen shape. Portrait = tall → stack vertically. Landscape = wide → split horizontally. Match your layout to the constraint.
+
+---
+
+## Session 17: Getting Your App Onto a Real iPhone (Free, No App Store)
+
+### The Two Tiers of Apple Development
+
+Before you can put an app on a phone, you need to understand Apple's two development tiers:
+
+| | Free (Personal Team) | Paid ($99/year) |
+|---|---|---|
+| Install on your own device | ✅ | ✅ |
+| App Store submission | ❌ | ✅ |
+| TestFlight beta sharing | ❌ | ✅ |
+| App expires after | 7 days | 1 year |
+
+The **free personal team** is an Apple ID you already have — no enrollment, no credit card. The restriction is that apps re-expire every 7 days and can only run on devices you physically connect to Xcode. For personal use and testing, it's completely fine.
+
+### What "Code Signing" Actually Is
+
+When you install an app on an iPhone, iOS needs to know it came from someone Apple can trace. That "someone" is a **signing certificate** — a cryptographic identity Xcode generates and stores in your Mac's Keychain. Every app binary gets signed with your cert before it lands on the device.
+
+When Xcode says "codesign wants to access key Apple Development: Your Name in your keychain" and asks for your Mac login password — that's it unlocking the Keychain to use your cert. It's not a virus, it's not sketchy, it's exactly supposed to happen. You'll see it once per new cert, then never again.
+
+### Developer Mode on iOS (iOS 16+)
+
+Apple introduced a **Developer Mode** lock in iOS 16 as a security measure. Before you can run a dev-signed app on your device, you have to explicitly unlock this mode. It's a one-time step per device.
+
+**How to enable it:**
+1. Connect your iPhone to your Mac via USB
+2. Hit Play in Xcode — it'll attempt to install and fail with a prompt
+3. On your iPhone: **Settings → Privacy & Security → Developer Mode → toggle ON**
+4. iPhone restarts
+5. After restart, a system prompt appears: "Turn On Developer Mode?" → **Turn On**
+6. Back in Xcode, hit Play again — installs successfully
+
+Why the restart? Because Developer Mode changes how iOS's security kernel handles app signatures — it's not just a preferences flag, it's a kernel-level change that requires a clean boot to activate.
+
+### The Full First-Time Setup Flow
+
+Here's the complete end-to-end for a brand-new Mac + iPhone pairing:
+
+1. **In Xcode → Settings → Accounts** — add your Apple ID if not already there
+2. **In Xcode project → target → Signing & Capabilities** — set Team to "Your Name (Personal Team)"
+3. Xcode auto-generates a provisioning profile (takes ~5 seconds, no action needed)
+4. **Mac Keychain prompt** — enter your Mac login password to allow codesign access
+5. **Connect iPhone via USB** — iPhone prompts "Trust This Computer?" → tap **Trust**, enter passcode
+6. **Enable Developer Mode** on iPhone (Settings → Privacy & Security → Developer Mode)
+7. Select your device in Xcode's run destination dropdown
+8. Hit **▶ Play** — app builds and installs
+9. **First launch on device**: Settings → General → VPN & Device Management → your Apple ID → **Trust**
+
+Step 9 is the "trust the developer" step — iOS defaults to blocking apps from unrecognized sources even after install. You have to manually trust your own certificate. Once trusted, all future apps signed with the same cert install and launch without this step.
+
+### The 7-Day Expiry Reality
+
+With a free account, the provisioning profile that authorizes your app expires after 7 days. The app itself doesn't disappear from your phone, but iOS will refuse to launch it — you'll see "app is no longer available" or similar.
+
+The fix: plug in to Xcode and hit Play again. Xcode re-signs the app and resets the 7-day clock. The app data (presets, settings) survives — it's just the authorization that expires.
+
+### Why You Don't Need the App Store for Personal Use
+
+The whole App Store process — review, provisioning, certificates, screenshots, descriptions — exists for public distribution. For an app you're building for yourself to control your own guitar pedals, none of that matters. The personal team + Xcode flow gives you a real, fully functional native app on your real device. It's what every iOS developer uses during development anyway.
+
+The only difference between a "dev build" and an "App Store build" is who signed it and where it came from. The code is identical.

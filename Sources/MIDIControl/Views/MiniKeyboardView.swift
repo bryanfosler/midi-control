@@ -9,7 +9,11 @@ import SwiftUI
 struct MiniKeyboardView: View {
     @ObservedObject var viewModel: PedalViewModel
 
+    #if os(iOS)
+    @State private var isExpanded: Bool = false
+    #else
     @State private var isExpanded: Bool = true
+    #endif
     @State private var octave: Int = 4
     @State private var activeNotes: Set<Int> = []
     @FocusState private var isFocused: Bool
@@ -98,39 +102,48 @@ struct MiniKeyboardView: View {
         .focused($isFocused)
         .onKeyPress(phases: [.down, .up]) { handleKeyPress($0) }
         .contentShape(Rectangle())
+        #if os(macOS)
+        // On macOS, tap anywhere to capture keyboard focus before using hardware keys.
+        // On iOS, this tap gesture must NOT be present — it would consume touches
+        // before the DragGesture(minimumDistance: 0) on individual piano keys fires.
         .onTapGesture { isFocused = true }
+        #endif
     }
 
     // MARK: - Header bar
 
     private var headerBar: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "pianokeys")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Synth Keyboard")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.secondary)
-            Spacer()
-            if !isFocused {
-                Text("click to enable keys")
-                    .font(.caption2)
-                    .foregroundStyle(.quaternary)
+        // Entire header row is tappable to expand/collapse
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                isExpanded.toggle()
+                if !isExpanded { allNotesOff() }
             }
-            Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    isExpanded.toggle()
-                    if !isExpanded { allNotesOff() }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "pianokeys")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Synth Keyboard")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                #if os(macOS)
+                if !isFocused {
+                    Text("click to enable keys")
+                        .font(.caption2)
+                        .foregroundStyle(.quaternary)
                 }
-            } label: {
+                #endif
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Piano keys
