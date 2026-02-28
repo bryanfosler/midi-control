@@ -523,3 +523,30 @@
 
 ### Decisions Made
 - `.contentShape` belongs on the label HStack, not the Button — added to CLAUDE.md as a hard-won SwiftUI pattern
+
+## Session 18 — MIDI Channel Bugs, iPhone Letterboxing, Scale Fix
+
+**Date:** 02.28.2026
+**Time spent:** ~45m
+
+### What We Built
+- Nothing new — bug fix session
+
+### What Shipped
+- Fixed MIDI channel crossover: MOOD MKII default channel corrected from 2 → 3
+- Fixed channel persistence: midiChannel now saved to UserDefaults per pedal, survives app restarts
+- Fixed iPhone 16 Pro black bars: added UILaunchScreen to iOS Info.plist via project.yml
+- Fixed portrait enclosure scale: removed hard 1.0 cap, enclosure now fills available screen height (width-capped)
+- Fixed iPhoneRootView VStack not filling screen
+- Committed `5342a9e` and pushed to `bryanfosler/midi-control`
+
+### Bugs Fixed
+- **MIDI CC crossover** — Both pedals on ch2 caused any CC from one pedal to affect the other hardware pedal. Root cause: MoodMKIIDefinition had `defaultChannel: 2` same as Brothers AM. Knob changes were triggering footswitch state changes on the other pedal.
+- **Channel select not sticking** — `midiChannel` was @Published in-memory only; reset to default on every launch. Fixed with UserDefaults persistence keyed by `pedal_<id>_midiChannel`.
+- **Black bars on iPhone** — No `UILaunchScreen` in Info.plist causes iOS to letterbox the app with black at top and bottom on modern iPhones. Fixed by adding `UILaunchScreen: {}` to project.yml.
+- **Enclosure too small on large iPhones** — `min(1.0, ...)` scale cap left ~130pt dead space at bottom on iPhone 14/15/16. Fixed by allowing scale > 1.0, capped by available width.
+
+### Decisions Made
+- UserDefaults key format: `pedal_<definition.id>_midiChannel` (e.g. `pedal_brothers-am_midiChannel`)
+- `UILaunchScreen: {}` (empty dict) is the correct modern approach — no storyboard needed
+- Delete + reinstall required after letterboxing fix for clean slate

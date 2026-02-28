@@ -579,3 +579,42 @@ The fix: plug in to Xcode and hit Play again. Xcode re-signs the app and resets 
 The whole App Store process — review, provisioning, certificates, screenshots, descriptions — exists for public distribution. For an app you're building for yourself to control your own guitar pedals, none of that matters. The personal team + Xcode flow gives you a real, fully functional native app on your real device. It's what every iOS developer uses during development anyway.
 
 The only difference between a "dev build" and an "App Store build" is who signed it and where it came from. The code is identical.
+
+---
+
+## The Phantom Footswitch: How Two Pedals on the Same MIDI Channel Will Drive You Crazy
+
+Picture this: you're adjusting the Time knob on the MOOD MKII, and the Brothers AM footswitch LED randomly flips on or off. You're not touching the Brothers at all. What the heck?
+
+This is called **MIDI channel crosstalk**, and it's one of those bugs that makes you feel like your hardware is haunted before you realize it's a very logical (if maddening) software mistake.
+
+### The Setup
+
+Both Chase Bliss pedals share an overlapping CC table. CC 14 means "Time" on the MOOD but "something else" on the Brothers. CC 102 and 103 are footswitch triggers on the Brothers. That's why Chase Bliss designed the pedals to operate on **different MIDI channels** — so they can share CC numbers without interfering.
+
+The app was supposed to default Brothers AM to ch2, MOOD MKII to ch3. But `MoodMKIIDefinition.swift` had `defaultChannel: 2` — same as Brothers. The hardware didn't care which app sent the message. Both physical pedals were listening on ch2, so they both responded to every CC.
+
+When you turned the MOOD Time knob, the app sent CC 14 on ch2. The Brothers heard that. Depending on what CC 14 does on the Brothers hardware at that value, the pedal might have interpreted it as a footswitch state change. Phantom toggles.
+
+### The Memory Bug That Made It Worse
+
+Even if you caught this and used the channel-change UI to move MOOD to ch3, it wouldn't survive a restart. The `midiChannel` property was just an `@Published var` — pure in-memory runtime state. Relaunch the app, both pedals reset to their `defaultChannel` values, both back on ch2, chaos resumes.
+
+The fix was two-pronged:
+1. **Correct the default** — MOOD MKII now ships with `defaultChannel: 3`
+2. **Persist the selection** — `UserDefaults.standard.set(midiChannel, forKey: "pedal_\(definition.id)_midiChannel")` in the `didSet` observer. One line. Now your channel choice survives restarts, and a preset load that changes the channel also persists it automatically.
+
+### The Black Bars That Weren't a Layout Problem
+
+The app was showing big black bars at the top and bottom on iPhone 16 Pro. The natural instinct is to dig into SwiftUI layout — maybe a VStack isn't expanding, maybe GeometryReader is reporting wrong values. We spent time investigating that.
+
+The actual fix was one line in `project.yml`:
+```yaml
+UILaunchScreen: {}
+```
+
+Here's why: iOS uses the presence of a launch screen as a **signal of intent**. When an app declares `UILaunchScreen`, it's telling the OS "I was explicitly built for modern full-screen devices." Without that declaration, iOS assumes the app might have been designed for an older, smaller screen — maybe an iPhone 4 or 5 — and it letterboxes it with black bars to be "safe."
+
+This has nothing to do with SwiftUI layout code. The OS makes this decision before your first line of Swift runs. It's a metadata problem, not a rendering problem. The `{}` empty dict is enough — you don't need custom branding on the launch screen, just the key's presence.
+
+**Lesson:** If you see black bars at top and bottom on a real iOS device and not the simulator, check `UILaunchScreen` before touching any layout code.
