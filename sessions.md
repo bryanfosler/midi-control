@@ -504,3 +504,22 @@
 - Reset to Stock → orange (vs factory reset → red) to visually distinguish app-side vs hardware reset
 - 10s hold for Reset to Stock: destructive enough to warrant more friction than the 2s factory reset
 ```
+
+## Session 17 — Fix Collapsible Header Tap Area
+
+**Date:** 02.28.2026
+**Time spent:** ~30m
+
+### What We Built
+- Nothing new — pure bug fix session
+
+### What Shipped
+- Full-width tap target on all collapsible panel headers: DIP Switches, Advanced Settings (panel header + per-section headers), Synth Keyboard
+- Committed `70da5fe` and pushed to `bryanfosler/midi-control`
+
+### Bugs Fixed
+- **Collapsible headers: dead-zone click bug** — `.contentShape(Rectangle())` was on the outer `Button` but SwiftUI plain-style buttons delegate hit-testing to the label's rendered content. `Spacer()` is transparent, so the gap between text and chevron ignored all taps. Fix: move `.contentShape(Rectangle())` inside the label, onto the `HStack`.
+- **iOS Simulator type-checker timeout** — `ResetToStockButton.body` had inline computed expressions (`0.50 + 0.50 * holdProgress`, countdown string interpolation) that timed out the x86_64 Swift type-checker. Extracted into computed properties to resolve.
+
+### Decisions Made
+- `.contentShape` belongs on the label HStack, not the Button — added to CLAUDE.md as a hard-won SwiftUI pattern
