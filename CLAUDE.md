@@ -48,6 +48,13 @@ open MIDIControl.xcodeproj  # correct way to open for GUI development
 - **iOS plist keys** go in `project.yml` under `info.properties` — never hand-edit `Info_iOS.plist`, xcodegen regenerates it
 - **Platform conditionals:** `#if os(macOS)` / `#if os(iOS)` used throughout; AppKit types must be guarded
 
+## iOS Device Testing (free personal team)
+- **After each `xcodegen generate`**: must re-select Personal Team in Xcode → MIDIControliOS target → Signing & Capabilities (the xcodeproj is gitignored so the team selection doesn't persist)
+- **Developer Mode**: required on iOS device — Settings → Privacy & Security → Developer Mode → ON → restart (one-time per device)
+- **First launch trust**: Settings → General → VPN & Device Management → Apple ID → Trust (one-time per cert)
+- **7-day expiry**: provisioning profile expires after 7 days; fix by hitting Play in Xcode again — app data survives, just the authorization resets
+- **No App Store needed** for personal use — sideload via Xcode is fully functional
+
 ## Shared Utilities
 ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - SPM identifies local packages by **folder name**, not `Package.swift` name
