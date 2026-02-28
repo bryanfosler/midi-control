@@ -83,9 +83,9 @@ struct HiddenSettingsPanel: View {
             .foregroundStyle(theme.labelColor)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
     }
 
     // MARK: - Per-section collapsible
@@ -111,9 +111,9 @@ struct HiddenSettingsPanel: View {
                         .font(.system(size: 8, weight: .medium))
                         .foregroundStyle(theme.labelColor.opacity(0.40))
                 }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .contentShape(Rectangle())
 
             if !isCollapsed {
                 sectionContent(for: section)
@@ -291,6 +291,15 @@ private struct ResetToStockButton: View {
     @State private var showingAlert = false
     private let holdDuration: TimeInterval = 10.0
 
+    private var buttonLabel: String {
+        if holdProgress > 0 {
+            return "Hold to arm… (\(Int((1.0 - holdProgress) * holdDuration + 1))s)"
+        }
+        return "Reset to Stock"
+    }
+    private var labelOpacity: Double  { 0.50 + 0.50 * Double(holdProgress) }
+    private var borderOpacity: Double { 0.28 + 0.42 * Double(holdProgress) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .leading) {
@@ -304,18 +313,18 @@ private struct ResetToStockButton: View {
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 10))
-                    Text(holdProgress > 0 ? "Hold to arm… (\(Int((1.0 - holdProgress) * holdDuration + 1))s)" : "Reset to Stock")
+                    Text(buttonLabel)
                         .font(.system(size: 11, weight: .medium))
                 }
                 .padding(.horizontal, 10)
-                .foregroundStyle(Color.orange.opacity(0.50 + 0.50 * holdProgress))
+                .foregroundStyle(Color.orange.opacity(labelOpacity))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 30)
             .clipShape(RoundedRectangle(cornerRadius: 5))
             .overlay(
                 RoundedRectangle(cornerRadius: 5)
-                    .strokeBorder(Color.orange.opacity(0.28 + 0.42 * holdProgress), lineWidth: 0.75)
+                    .strokeBorder(Color.orange.opacity(borderOpacity), lineWidth: 0.75)
             )
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)

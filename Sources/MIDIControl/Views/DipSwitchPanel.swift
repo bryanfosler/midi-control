@@ -52,9 +52,9 @@ struct DipSwitchPanel: View {
             .foregroundStyle(theme.labelColor)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .contentShape(Rectangle())
     }
 
     // MARK: - Dip Switch Content (shared across all platforms)
