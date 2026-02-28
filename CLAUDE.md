@@ -34,6 +34,8 @@ A native macOS SwiftUI app for controlling Chase Bliss guitar pedals via MIDI.
 - CC 104, value = (targetChannel − 1) = Chase Bliss channel-change command (send on CURRENT channel)
 - Sliders send CC on every value change (real-time, not on-release)
 - Footswitch params send CC value 127 as a momentary trigger
+- **midiChannel persistence** — saved to `UserDefaults` keyed `pedal_<definition.id>_midiChannel`; loaded in `PedalViewModel.init()` with fallback to `definition.defaultChannel`
+- **Both pedals MUST be on different channels** — CC tables overlap; same channel = phantom state changes (knob on one pedal triggers footswitch on other)
 
 ## Build & Run
 ```bash
@@ -47,6 +49,11 @@ open MIDIControl.xcodeproj  # correct way to open for GUI development
 - **Two targets:** `MIDIControl` (macOS 14+) and `MIDIControliOS` (iOS 17+) — same `Sources/MIDIControl/` folder
 - **iOS plist keys** go in `project.yml` under `info.properties` — never hand-edit `Info_iOS.plist`, xcodegen regenerates it
 - **Platform conditionals:** `#if os(macOS)` / `#if os(iOS)` used throughout; AppKit types must be guarded
+
+## iOS Launch Screen
+- **`UILaunchScreen: {}`** must be in `project.yml` `info.properties` — without it iOS letterboxes the app with black bars at top/bottom on modern iPhones (the OS assumes an older, smaller-screen app)
+- Empty dict `{}` is sufficient — no custom branding needed, just the key's presence
+- After adding this, **delete and reinstall** the app on device to clear the cached letterbox behavior
 
 ## iOS Device Testing (free personal team)
 - **After each `xcodegen generate`**: must re-select Personal Team in Xcode → MIDIControliOS target → Signing & Capabilities (the xcodeproj is gitignored so the team selection doesn't persist)
