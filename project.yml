@@ -48,6 +48,7 @@ targets:
         NSBluetoothAlwaysUsageDescription: "Required to connect to MIDI pedals via Bluetooth MIDI"
         UIRequiredDeviceCapabilities:
           - bluetooth-le
+        UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

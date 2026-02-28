@@ -157,6 +157,7 @@ private struct iPhoneRootView: View {
                 )
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showingPresets) {
             presetsSheet
                 .presentationDetents([.medium, .large])

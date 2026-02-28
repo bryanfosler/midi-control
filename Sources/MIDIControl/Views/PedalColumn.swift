@@ -49,13 +49,15 @@ struct PedalColumn: View {
         }
     }
 
-    /// Portrait: scale enclosure to ~75% of available height so the whole pedal
-    /// is visible on screen without scrolling. Advanced settings scroll below.
+    /// Portrait: scale the enclosure to fill available height, capped by screen width.
+    /// ~110pt overhead accounts for collapsed panel headers + spacing.
     /// Minimum scale enforces 44pt touch targets on the knobs (natural knob frame = 76pt).
     private func portraitLayout(geo: GeometryProxy) -> some View {
         let minScale: CGFloat = 44.0 / 76.0  // keeps knob touch targets ≥ 44pt
-        let proposedScale = min(1.0, geo.size.height * 0.75 / PedalEnclosure.enclosureHeight)
-        let scale = max(proposedScale, minScale)
+        let overhead: CGFloat = 110          // collapsed panel headers + VStack spacing
+        let scaleByHeight = (geo.size.height - overhead) / PedalEnclosure.enclosureHeight
+        let scaleByWidth  = (geo.size.width - 32) / PedalEnclosure.enclosureWidth  // 16pt padding each side
+        let scale = max(minScale, min(scaleByHeight, scaleByWidth))
         return ScrollView {
             VStack(spacing: 14) {
                 // iPad: show channelBar inline (screen space allows it).

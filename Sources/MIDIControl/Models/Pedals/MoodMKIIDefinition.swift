@@ -6,7 +6,7 @@ extension PedalDefinition {
         id: "mood-mkii",
         name: "MOOD MKII",
         manufacturer: "Chase Bliss",
-        defaultChannel: 2,
+        defaultChannel: 3,
         parameters: [
             // MARK: - Knobs
             ParameterDefinition(

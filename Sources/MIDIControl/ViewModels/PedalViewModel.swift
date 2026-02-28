@@ -8,7 +8,10 @@ class PedalViewModel: ObservableObject, Identifiable {
 
     @Published var state: PedalState
     @Published var midiChannel: Int {
-        didSet { state.midiChannel = midiChannel }
+        didSet {
+            state.midiChannel = midiChannel
+            UserDefaults.standard.set(midiChannel, forKey: "pedal_\(definition.id)_midiChannel")
+        }
     }
 
     /// The ID of the last-loaded preset, used to highlight it in the preset panel.
@@ -30,12 +33,16 @@ class PedalViewModel: ObservableObject, Identifiable {
     // re-render when state.values changes — e.g., on preset load or reset.
     private var stateCancellable: AnyCancellable?
 
+    private var channelDefaultsKey: String { "pedal_\(definition.id)_midiChannel" }
+
     init(definition: PedalDefinition, midiManager: MIDIManager, presetStorage: PresetStorage) {
         self.id = definition.id
         self.definition = definition
         self.midiManager = midiManager
         self.presetStorage = presetStorage
-        self.midiChannel = definition.defaultChannel
+        let key = "pedal_\(definition.id)_midiChannel"
+        let saved = UserDefaults.standard.integer(forKey: key)
+        self.midiChannel = (saved >= 1 && saved <= 16) ? saved : definition.defaultChannel
         self.state = PedalState(definition: definition)
         loadPresetList()
 
