@@ -77,6 +77,8 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - **Responsive enclosure scaling** — `scaleEffect(s)` + double `.frame` trick: first frame at natural size, scaleEffect shrinks rendering, second frame tells layout the scaled size
 - **`.principal` toolbar placement** — puts any view in the nav bar center (replaces title); use for pedal picker to save ~48pt vs a separate picker row
 - **iOS deployment target: 17.0** — required for `.onKeyPress(phases:)`; `MiniKeyboardView` uses `#if os(macOS)` color helpers for cross-platform colors
+- **`.contentShape(Rectangle())` for full-width button tap area** — with `.buttonStyle(.plain)`, hit testing is delegated to the label's rendered content; `Spacer()` is transparent so gaps are dead zones. Fix: put `.contentShape(Rectangle())` on the `HStack` **inside** the label, not on the outer `Button`. Putting it on the Button does nothing.
+- **iOS Simulator type-checker timeout** — complex inline expressions (ternary + string interpolation + arithmetic) in a single view body can time out on x86_64 simulator builds even when macOS (arm64) compiles fine. Fix: extract to computed properties outside `body`.
 
 ## Key Files
 - `Models/Pedals/BrothersAMDefinition.swift` — Brothers AM CC table
