@@ -9,6 +9,14 @@ A native macOS SwiftUI app for controlling Chase Bliss guitar pedals via MIDI.
 - Both pedals are **receive-only** (no MIDI out) — app must track all state internally
 - Connected via USB MIDI interface (e.g., CME C2MIDI Pro)
 
+## Reference Manuals (local)
+All manuals are in `~/Documents/Claude/Midi Control/` — **check here before searching the web:**
+- `Brothers+AM_Manual_Pedal_Chase+Bliss.pdf` — full field guide (knob layout, presets, dips, presence)
+- `Brothers-AM_MIDI-Manual_Pedal_Chase-Bliss.pdf` — MIDI CC reference
+- `MOOD+MKII_Manual_Pedal_Chase+Bliss.pdf` — full MOOD MKII guide
+- `MOOD+MKII_MIDI+Manual_Pedal_Chase+Bliss.pdf` — MOOD MKII MIDI CC reference
+- `Dip+Switches+101_Chase+Bliss.pdf` — dip switch behavior guide
+
 ## DIY MIDI-to-TRS Converter Box (1590B)
 - **Enclosure**: Hammond 1590B — 112mm × 60mm × 31mm exterior
 - **Layout (Option B)**: TRS jacks on long side, DIN IN + DIN THRU on Short Side A, SPDT switches on top face, Short Side B blank
