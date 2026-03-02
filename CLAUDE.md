@@ -36,6 +36,8 @@ A native macOS SwiftUI app for controlling Chase Bliss guitar pedals via MIDI.
 - Footswitch params send CC value 127 as a momentary trigger
 - **midiChannel persistence** — saved to `UserDefaults` keyed `pedal_<definition.id>_midiChannel`; loaded in `PedalViewModel.init()` with fallback to `definition.defaultChannel`
 - **Both pedals MUST be on different channels** — CC tables overlap; same channel = phantom state changes (knob on one pedal triggers footswitch on other)
+- **Factory presets are data, not code** — `FactoryPresets.swift` structs seed JSON on first launch. A wrong value (e.g., `midiChannel: 2` instead of `3`) gets saved to disk and persists across updates. Fixing the source alone isn't enough — also bump the seed version key AND add a migration for already-saved presets. Pattern: `seedIfNeeded` runs a one-time migration (gated by its own UserDefaults key) before the guard that skips re-seeding.
+- **`PedalState.loadValues` must be a full reset** — resets all params to defaults first, then overlays preset values. Additive-only approach lets CC values from previous presets bleed through for CCs not in the new preset.
 
 ## Build & Run
 ```bash
