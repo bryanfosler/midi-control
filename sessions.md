@@ -4,6 +4,29 @@
 
 ---
 
+## Session 20 — CB Presets Community Importer
+
+**Date:** 03.01.2026
+**Time spent:** ~50m
+
+### What We Built
+- Investigated the Chase Bliss Presets iOS app backup JSON format (492 community presets across 30 pedal types)
+- Reverse-engineered the physical knob position → MIDI CC mapping using the Brothers AM manual
+- Wrote `import_cb_presets.py` — converts CB Presets JSON to MIDIControl preset files with full knob/toggle/dip/hidden-option support
+
+### What Shipped
+- `import_cb_presets.py` committed to `bryanfosler/midi-control` (d64a4b3)
+- 44 community presets imported: 13 Brothers AM + 31 MOOD MKII
+- All tagged `"cb-presets"` for easy identification and bulk removal before App Store submission
+
+### Decisions Made
+- Skipped 4 Brothers AM presets whose names overlap existing factory presets (case-insensitive: "Bad Bros", "The Analog Man", "Sunny Skies", "2-In-1")
+- Used `tags` array (existing field) for source tagging — no schema change needed
+- Hidden options mapping: Brothers AM uses `hiddenOptionValues.bottomLeft/bottomRight` → Presence 2 (CC 27) / Presence 1 (CC 29); MOOD MKII uses all 6 hidden knob positions (CC 24–29) + 3 hidden toggles (CC 31–33)
+- Buffer Length toggle (CC 33) is 2-option only: "left"→0 (MKI), "right"→127 (Full)
+
+---
+
 ## Session 19 — MIDI Channel Crossover Bug (Factory Presets)
 
 **Date:** 03.01.2026
