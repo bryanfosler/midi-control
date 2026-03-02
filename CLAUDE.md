@@ -39,6 +39,16 @@ A native macOS SwiftUI app for controlling Chase Bliss guitar pedals via MIDI.
 - **Factory presets are data, not code** — `FactoryPresets.swift` structs seed JSON on first launch. A wrong value (e.g., `midiChannel: 2` instead of `3`) gets saved to disk and persists across updates. Fixing the source alone isn't enough — also bump the seed version key AND add a migration for already-saved presets. Pattern: `seedIfNeeded` runs a one-time migration (gated by its own UserDefaults key) before the guard that skips re-seeding.
 - **`PedalState.loadValues` must be a full reset** — resets all params to defaults first, then overlays preset values. Additive-only approach lets CC values from previous presets bleed through for CCs not in the new preset.
 
+## Community Preset Import (CB Presets App)
+
+- Script: `import_cb_presets.py` at repo root — run with `python3 import_cb_presets.py`
+- Source: Chase Bliss Presets iOS app backup (`ChaseBlissPresets.json` exported from app → Files)
+- Filters to `brothersAM` (17 total, 4 skipped for factory name overlap → 13 imported) + `moodMKII` (31 imported)
+- All imported presets tagged `"cb-presets"` — batch-remove before App Store submission
+- **Physical → CC mapping (Brothers AM):** top row L→R = Gain 2 (CC14), Vol 2 (CC15), Gain 1 (CC16); bottom row = Tone 2 (CC17), Vol 1 (CC18), Tone 1 (CC19); toggles L/M/R = CC21/22/23 (values 0/2/3); presence hidden opts: bottomLeft→CC27, bottomRight→CC29
+- **Physical → CC mapping (MOOD MKII):** top row = Time (CC14), Mix (CC15), Length (CC16); bottom row = ModifyWet (CC17), Clock (CC18), ModifyLoop (CC19); toggles L/M/R = CC21/22/23 (values 0/2/127); ramp→CC20; hidden knobs topL→CC24 … bottomR→CC29; hidden toggles L/M→CC31/32, Buffer Length→CC33 (left=0, right=127)
+- Dip switches (both pedals): row1 dips 1–8 → CC 61–68; row2 dips 1–8 → CC 71–78; true→127, false→0
+
 ## Build & Run
 ```bash
 swift build        # compile (verifies correctness from terminal)
