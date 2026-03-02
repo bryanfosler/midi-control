@@ -618,3 +618,52 @@ Here's why: iOS uses the presence of a launch screen as a **signal of intent**. 
 This has nothing to do with SwiftUI layout code. The OS makes this decision before your first line of Swift runs. It's a metadata problem, not a rendering problem. The `{}` empty dict is enough — you don't need custom branding on the launch screen, just the key's presence.
 
 **Lesson:** If you see black bars at top and bottom on a real iOS device and not the simulator, check `UILaunchScreen` before touching any layout code.
+
+---
+
+## Session 19: The Wrong-Channel Factory Preset Bug
+
+### "I thought you already fixed the crossover bug?"
+
+We did — in session 18, we fixed the `defaultChannel` in `MoodMKIIDefinition.swift` so MOOD ships on ch3 instead of ch2. But this session Bryan reported the same symptom was *still happening*: clicking a MOOD preset would physically snap Brothers AM's toggles and change its knob values.
+
+The `defaultChannel` fix was right. But there was a second, separate bug hiding in a different place.
+
+### Where a Preset Stores Its Channel
+
+When you save a preset, it captures the current `midiChannel` along with all the knob and toggle values. The `Preset` struct has a `midiChannel: Int` field, and `savePreset()` writes whatever the VM's current channel is at save time.
+
+The **factory presets** in `FactoryPresets.swift` are hardcoded Swift structs. Someone (me, in session 17 or 18) wrote all 6 MOOD MKII factory presets with `midiChannel: 2`. Just a typo in the source code. The definition was correct (`defaultChannel: 3`), but the factory presets were wrong.
+
+### Why the Wrong Channel Is So Destructive
+
+Here's the sequence when you click a MOOD preset:
+
+1. `loadPreset()` runs
+2. `midiChannel = preset.midiChannel` → MOOD's app channel becomes **2** (Brothers' channel)
+3. `sendAll()` fires → every MOOD CC value goes out on channel **2**
+4. Brothers AM hardware is listening on ch2 → it receives all of them
+5. MOOD's CC 21 is Wet Channel (Reverb/Delay/Slip). Brothers' CC 21 is Gain 2 Type. Brothers receives whatever value MOOD had for Wet Channel and interprets it as a Gain 2 Type change. Toggle physically snaps.
+6. Same for CC 22, CC 23, and all the knob CCs
+
+After loading, the MOOD PedalViewModel *also* thinks it's on ch2. So any manual MOOD adjustment you make afterward *also* goes to Brothers. The pedals are fully crossed.
+
+### The Migration Problem
+
+You can't just fix the Swift source code and ship it, because users who already launched the app once will have the wrong-channel presets saved to disk as JSON files. The next app launch loads from disk, not from the factory preset structs.
+
+The fix needed two parts:
+1. **Source fix** — Correct all 6 presets in `FactoryPresets.swift`: `midiChannel: 2` → `midiChannel: 3`, and bump the seed version so they're re-seeded.
+2. **Migration** — A one-time function that scans all MOOD MKII presets on disk and corrects any with `midiChannel == 2`. Runs once at app launch, gated by a UserDefaults key.
+
+The migration is intentionally scoped: it only touches MOOD presets, and only ones with channel 2. Brothers presets *should* have channel 2, so they're untouched.
+
+### The Bonus Bug: Additive Preset Loading
+
+While we were in `PedalState`, we noticed `loadValues()` was *additive* — it only wrote CC values that were present in the preset dict. If the current state had CC 71 = 127 (Hi Gain ON), and you loaded a preset that didn't mention CC 71, the Hi Gain stayed on even though the preset never intended it.
+
+This is bad for the same reason a fill-in-the-blank answer is worse than multiple choice: the preset should represent a *complete known state*, not a partial delta. The fix was simple: reset all params to factory defaults first, then overlay the preset values. Now a loaded preset means exactly what it says.
+
+### The Lesson
+
+**Factory presets are data, not code.** They look like code — they're Swift structs in a `.swift` file — but they carry data that gets saved to disk and must be migrated like a database schema. A typo in a factory preset isn't just a visual glitch you'll notice on first launch and fix by opening the source. It's a seed that plants wrong data on disk, survives app updates, and requires a migration to correct. Treat hardcoded data with the same care you'd give a database migration.

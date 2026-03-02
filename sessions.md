@@ -4,6 +4,31 @@
 
 ---
 
+## Session 19 — MIDI Channel Crossover Bug (Factory Presets)
+
+**Date:** 03.01.2026
+**Time spent:** ~20m
+
+### What We Built
+- Investigated phantom toggle/knob behavior reported by Bryan: clicking a MOOD preset caused Brothers AM hardware to physically respond
+
+### What Shipped
+- Fixed all 6 MOOD MKII factory presets: `midiChannel: 2` → `midiChannel: 3`
+- Added one-time on-disk migration (`moodChannelMigrated_v1`) to fix already-saved presets
+- Bumped factory seed key `v4` → `v5` so corrected presets are re-seeded
+- Fixed `PedalState.loadValues` to be a full reset (defaults first, then overlay) instead of additive
+- Committed `07dfed2` and pushed to `bryanfosler/midi-control`
+
+### Bugs Fixed
+- **Wrong channel in MOOD factory presets** — All 6 MOOD MKII factory presets had `midiChannel: 2` (Brothers AM's channel). On preset load, `sendAll()` blasted MOOD's CCs on ch2. Brothers received them and its hardware physically snapped toggles and knob values. After loading, MOOD's VM also thought it was on ch2, so manual control changes continued going to Brothers.
+- **Additive `loadValues`** — `PedalState.loadValues` only wrote CCs present in the preset dict, leaving any unmentioned CCs at their previous values. Loading preset A (CC 71 = Hi Gain ON), then preset B (no CC 71 entry) left Hi Gain active. Fixed with full reset-then-overlay approach.
+
+### Decisions Made
+- Migration runs once at app launch (keyed by `moodChannelMigrated_v1`) — cheap scan, fixes users who already had wrong-channel presets saved to disk
+- `loadValues` full-reset behavior is strictly better: a loaded preset should represent a complete known state, not a partial overlay
+
+---
+
 ## Session 17 — First iOS Device Install
 
 **Date:** 02.27.2026
