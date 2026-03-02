@@ -35,11 +35,19 @@ class PedalState: ObservableObject {
         isDirty = true
     }
 
-    /// Load all values from a preset's parameter dictionary
+    /// Load all values from a preset's parameter dictionary.
+    /// Resets all params to their factory defaults first, then overlays the preset values.
+    /// This prevents leftover state from a previous preset bleeding through for CCs not
+    /// included in the new preset.
     func loadValues(_ presetValues: [Int: Int]) {
-        for (cc, value) in presetValues {
-            values[cc] = max(0, min(127, value))
+        var newValues: [Int: Int] = [:]
+        for param in definition.parameters {
+            newValues[param.cc] = param.defaultValue
         }
+        for (cc, value) in presetValues {
+            newValues[cc] = max(0, min(127, value))
+        }
+        values = newValues
         isDirty = false
     }
 

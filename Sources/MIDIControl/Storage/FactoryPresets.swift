@@ -8,11 +8,29 @@ import Foundation
 /// per the MIDI manual (e.g., CC 71 = Hi Gain 1, not "Order").
 enum FactoryPresets {
 
+    /// One-time migration: fix MOOD MKII presets that were saved with midiChannel: 2 (Brothers' channel).
+    /// All MOOD presets should be on channel 3. This corrects any on-disk presets created before the fix.
+    private static func migrateMoodChannels(storage: PresetStorage) {
+        let moodPresets = storage.loadPresets(for: "mood-mkii")
+        for var preset in moodPresets where preset.midiChannel == 2 {
+            preset.midiChannel = 3
+            preset.updatedAt = Date()
+            storage.save(preset)
+        }
+    }
+
     /// Seed factory presets for all pedals if they haven't been created yet.
     /// Uses UserDefaults to avoid re-seeding on every launch.
-    /// v4: adds dedup cleanup before saving so repeated version bumps don't stack duplicates.
+    /// v5: fixes MOOD MKII presets that had midiChannel: 2 instead of 3.
     static func seedIfNeeded(storage: PresetStorage) {
-        let key = "factoryPresetsSeeded_v4"
+        // Always run migration first — corrects wrong channels in any previously saved presets.
+        let migrationKey = "moodChannelMigrated_v1"
+        if !UserDefaults.standard.bool(forKey: migrationKey) {
+            migrateMoodChannels(storage: storage)
+            UserDefaults.standard.set(true, forKey: migrationKey)
+        }
+
+        let key = "factoryPresetsSeeded_v5"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
 
         // Remove any duplicates (by name) accumulated from previous seed versions
@@ -393,7 +411,7 @@ enum FactoryPresets {
     private static let moodAmbientStarter = Preset(
         name: "Ambient Starter",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 45,   // Time — moderate reverb size/decay
             15: 80,   // Mix — mostly wet
@@ -416,7 +434,7 @@ enum FactoryPresets {
     private static let moodReverbFreeze = Preset(
         name: "Reverb Freeze Pad",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 70,   // Time — longer decay / larger room
             15: 90,   // Mix — very wet
@@ -439,7 +457,7 @@ enum FactoryPresets {
     private static let moodSelfStretchLoop = Preset(
         name: "Self-Stretch Loop",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 50,   // Time — moderate delay, then sweep CW after loop established
             15: 85,   // Mix — mostly wet
@@ -463,7 +481,7 @@ enum FactoryPresets {
     private static let moodLoFiTapeEcho = Preset(
         name: "Lo-Fi Tape Echo",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 55,   // Time — moderate reverb color
             15: 70,   // Mix — balanced
@@ -487,7 +505,7 @@ enum FactoryPresets {
     private static let moodSlipHarmonizer = Preset(
         name: "Slip Harmonizer",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 25,   // Time — low = pitch-shifter feel, instant response
             15: 55,   // Mix — balanced, don't lose the dry signal
@@ -510,7 +528,7 @@ enum FactoryPresets {
     private static let moodTextureFactory = Preset(
         name: "Texture Factory",
         pedalId: "mood-mkii",
-        midiChannel: 2,
+        midiChannel: 3,
         parameters: [
             14: 80,   // Time — long reverb trails
             15: 95,   // Mix — very wet
