@@ -88,24 +88,13 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - Reference: `.product(name: "ProgressTracker", package: "swift")`
 - Use for terminal/CLI progress output; in-app progress uses SwiftUI `ProgressView`
 
-## SwiftUI / macOS Patterns (hard-won)
-- **`PedalState` is a CLASS** — mutations to `state.values` fire `state.objectWillChange` but NOT `viewModel.objectWillChange`. Fix: Combine forwarding in PedalViewModel init: `state.objectWillChange.sink { self?.objectWillChange.send() }`
-- **Interactive controls** use `@State var liveValue/liveIndex` for instant visual feedback; synced back from binding via `onAppear` + `onChange(of:)`
-- **Gesture coordinate space**: always use `coordinateSpace: .local` so `startLocation.x/y` is relative to the view (0…width), not screen-absolute
-- **Tooltips**: `.help()` must be on the **innermost interactive view** (same layer as gesture), not a parent container
-- **`Color.clear` doesn't hit-test on macOS** — use `Color.white.opacity(0.001)` for invisible tap targets
-- **`DragGesture(minimumDistance: 0, coordinateSpace: .local)`** is the reliable tap+drag pattern on macOS; more dependable than `onTapGesture` with location
-- **`.help()` placement**: put on the view with the gesture, not a parent wrapper
-- **`.background` vs ZStack for decorative layers** — `.background` is layout-invisible (won't shift surrounding views); ZStack sizes to its largest child. Use `.background` for glows, shadows, halos
-- **Timer during mouse-hold** — add to `RunLoop.main` with mode `.common` (`RunLoop.main.add(timer, forMode: .common)`); tracking mode blocks `.default` timers
-- **Keyboard piano input** — `@FocusState` + `.focusable()` + `.onKeyPress(phases: [.down, .up])` on macOS 14+; handle both phases in one modifier
-- **iPad orientation detection** — size classes are `.regular` in BOTH portrait and landscape on iPad; use `GeometryReader { geo in geo.size.width > geo.size.height }` to detect landscape
-- **iPhone landscape** — `verticalSizeClass == .compact` correctly identifies iPhone landscape (iPad stays `.regular`)
-- **Responsive enclosure scaling** — `scaleEffect(s)` + double `.frame` trick: first frame at natural size, scaleEffect shrinks rendering, second frame tells layout the scaled size
-- **`.principal` toolbar placement** — puts any view in the nav bar center (replaces title); use for pedal picker to save ~48pt vs a separate picker row
-- **iOS deployment target: 17.0** — required for `.onKeyPress(phases:)`; `MiniKeyboardView` uses `#if os(macOS)` color helpers for cross-platform colors
-- **`.contentShape(Rectangle())` for full-width button tap area** — with `.buttonStyle(.plain)`, hit testing is delegated to the label's rendered content; `Spacer()` is transparent so gaps are dead zones. Fix: put `.contentShape(Rectangle())` on the `HStack` **inside** the label, not on the outer `Button`. Putting it on the Button does nothing.
-- **iOS Simulator type-checker timeout** — complex inline expressions (ternary + string interpolation + arithmetic) in a single view body can time out on x86_64 simulator builds even when macOS (arm64) compiles fine. Fix: extract to computed properties outside `body`.
+## SwiftUI / macOS Patterns
+**See [swiftui-patterns.md](./swiftui-patterns.md)** for the full collection of hard-won SwiftUI/macOS/iOS patterns from this project and ClawDeck.
+
+Key patterns specific to this project:
+- **`PedalState` is a CLASS** — requires Combine forwarding in PedalViewModel init
+- **iOS deployment target: 17.0** — required for `.onKeyPress(phases:)`
+- **`.principal` toolbar placement** — use for pedal picker to save ~48pt vs a separate picker row
 
 ## Key Files
 - `Models/Pedals/BrothersAMDefinition.swift` — Brothers AM CC table
@@ -114,54 +103,5 @@ ProgressTracker is linked as a local SPM dependency from `~/utils/swift/`.
 - `ViewModels/PedalViewModel.swift` — per-pedal logic
 - `Storage/PresetStorage.swift` — preset persistence
 
-## Visual Design Reference (hard-won)
-
-### Toggle bat switches
-- Physical CB toggle switches: bat pivots from CENTER of housing
-- Correct top-down rendering: portrait oval (tall + narrow) that SHIFTS HORIZONTALLY
-- DO NOT use `rotationEffect` on the bat — it looks wrong. Use xShift + no rotation.
-- Left = oval shifts left, Center = circle, Right = oval shifts right
-- ovalW ≈ 0.58× batDiameter, ovalH ≈ 1.55× batDiameter when tilted
-
-### Knob visual layers (top to bottom in ZStack)
-1. Arc track (static 270° guide)
-2. Active arc glow (wider blurred layer) + crisp arc on top
-3. Drop shadow
-4. Outer grip ring (machined aluminum gradient)
-5. KnurlingRing (Canvas ±45° crosshatch, lineOpacity≈0.40, lineWidth≈0.65)
-6. Inner dome rim (strokeBorder)
-7. Dome body (RadialGradient)
-8. Machined lathe rings (Canvas concentric circles, clipped to dome)
-9. Specular highlights
-10. Recessed indicator groove (rotates with value)
-
-### Chase Bliss logos
-- CB logo between footswitches: thin ring + "CB" text, NOT any SF Symbol person/figure
-- AM badge (Brothers): 12-spike star OUTLINE (stroke, not fill) + filled gold circle center + "AM" text
-- MOOD brand: large bold italic "MOOD" with sunset gradient, "MKii" bottom-right corner
-
-## App Icon
-
-`Views/AppIconView.swift` — pure SwiftUI Canvas drawing of the 1024×1024 app icon.
-Design: dark maroon pedal enclosure + 1/4" TS cables plugged into both sides + central amber-arc knob.
-
-**To export the PNG for the asset catalog:**
-1. Open `AppIconView.swift` in Xcode
-2. Open the Preview canvas (Option+Cmd+Return or the Canvas button)
-3. Select the `"1024×1024 full"` preview
-4. Right-click the preview → "Save Image…" (or use the share icon)
-5. Save as `AppIcon-1024.png`
-6. Move it to: `Sources/MIDIControl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`
-7. Run `xcodegen generate` (asset catalog is already wired; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon)
-
-**Asset catalog location:** `Sources/MIDIControl/Assets.xcassets/AppIcon.appiconset/`
-**project.yml setting:** `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` (iOS target only)
-
-## V2 Image-Based UI (tabled — assets ready)
-Generated PNG assets are in `~/Documents/Claude/Midi Control/Pedal UI Images/`:
-- `Brothers AM Base enclosure.png`, `MoodMK2 base enclosure.png` — full pedal photos (NOT usable as interactive backgrounds; controls baked in + front-facing angle)
-- `left bat switch.png`, `center bat switch.png`, `right bat switch.png` — 3-state image swap for toggles
-- `Plum knob pink indicator.png`, `Plum knob white indicator.png`, `Plum knob yellow indicator.png` — indicator at 12 o'clock; rotate whole image for knob turn
-
-**Recommended approach (Option A):** Image knobs + bat switch images, drawn enclosure stays. Work on branch `v2-image-based`.
-Visual mock at `~/Documents/Claude/Midi Control/v2-image-mock.html`.
+## Visual Design Reference
+**See [visual-design-reference.md](./visual-design-reference.md)** for knob layers, toggle bat switch rendering, Chase Bliss logos, app icon export, and V2 image-based UI assets.
