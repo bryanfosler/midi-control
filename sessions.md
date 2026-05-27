@@ -4,6 +4,27 @@
 
 ---
 
+## Session 21 — Graphify Tier 2 Integration
+
+**Date:** 05.27.2026
+**Time spent:** ~1h40m
+
+### What We Built
+- Installed graphify Tier 2 integration: post-commit + post-checkout hooks in `.git/hooks/`, `.claude/settings.json` PreToolUse nudge to prefer `graphify query` over grep/find, and `## graphify` section in `CLAUDE.md`
+- Built initial per-repo AST knowledge graph via `graphify build .` → 236 nodes / 306 edges / 24 communities
+- Discovered and resolved workspace folder confusion: `Midi Control/` is a workspace folder; the actual git repo lives at `MIDIControl/` — reverted a mistaken outer `git init` (artifacts moved to `/tmp/` then removed)
+- Graphify post-commit hook self-validated by auto-rebuilding on commit `15aedd6`
+
+### What Shipped
+- Commit `15aedd6` — 3 files: `.gitignore`, `CLAUDE.md` (graphify section), `.claude/settings.json` (PreToolUse hook)
+- Pushed to `bryanfosler/midi-control` origin/main
+
+### Decisions Made
+- `graphify-out/` and `build/` added to `.gitignore` — graph is a local dev artifact, not checked in
+- Tier 2 hooks installed inside `MIDIControl/.git/` (correct inner repo), not the outer workspace folder
+
+---
+
 ## Session 20 — CB Presets Community Importer
 
 **Date:** 03.01.2026
