@@ -1,5 +1,11 @@
 # Bryan Learns: MIDIControl Architecture
 
+## Archive Superseded Prototypes Promptly
+
+The old `Desktop App/ChaseBlissController` app was a valid early prototype, but once the work moved into `Midi Control/MIDIControl`, keeping both projects active created repeated confusion. Agents and scans saw two Chase Bliss MIDI apps and sometimes recommended work on the obsolete one.
+
+The durable pattern: when a prototype is superseded, add a clear archive tombstone, move it out of the active workspace, and point every context file at the canonical project. Keeping stale code nearby is fine for provenance, but stale instructions should not remain in the active path.
+
 ## How the App Works (Big Picture)
 
 The app is a **MIDI controller** — it sends MIDI messages to your Chase Bliss pedals so you can tweak knobs, flip toggles, and save/load presets from your Mac instead of bending down to the pedalboard.
